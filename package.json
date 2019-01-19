@@ -1,0 +1,35 @@
+{
+  "name": "flame",
+  "version": "1.0.0",
+  "description": "A service for source code repository indexing like OpenGrok but in JavaScript",
+  "main": "server/index.js",
+  "scripts": {
+    "test": "echo 'No Test'",
+    "dev.client": "http-server ./client -P http://127.0.0.1:20180 -p 8080 -a 127.0.0.1",
+    "dev.server": "node ./server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dna2mirror/flame.git"
+  },
+  "keywords": [
+    "repository",
+    "source code",
+    "search engine",
+    "flame"
+  ],
+  "author": "Seven Lju",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dna2mirror/flame/issues"
+  },
+  "homepage": "https://github.com/dna2mirror/flame#readme",
+  "dependencies": {
+    "ldapjs": "^1.0.2",
+    "uuid": "^3.3.2",
+    "ws": "^6.1.2"
+  },
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  }
+}
