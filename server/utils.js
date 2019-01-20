@@ -15,7 +15,8 @@ const WebServer = {
    route: (req, res, router) => {
       let r = i_url.parse(req.url);
       let f = router;
-      let path = r.pathname.split('/');
+      let origin_path = r.pathname.split('/');
+      let path = origin_path.slice();
       let query = {};
       r.query && r.query.split('&').forEach((one) => {
          let key, val;
@@ -49,7 +50,9 @@ const WebServer = {
             });
          }
       }
-      router.code(req, res, 404, 'Not Found');
+      WebServer.debug.serve_static(
+         res, i_path.join(i_env.base, '..', 'client'), origin_path
+      ) || router.code(req, res, 404, 'Not Found');
    },
    router_base: {
       test: (req, res, options) => {
@@ -58,6 +61,46 @@ const WebServer = {
       code: (req, res, code, text) => {
          res.writeHead(code || 404, text || '');
          res.end();
+      }
+   },
+   debug: {
+      static_cache: {
+         max_size: 128 * 1024 * 1024, /* 128 MB */
+         size: 0,
+         pool: null
+      },
+      serve_static: (res, base, path) => {
+         if (!i_env.debug) return false;
+         if (path.indexOf('..') >= 0) return false;
+         path = path.slice(1);
+         if (!path.join('')) path = ['index.html'];
+         let cache = WebServer.debug.static_cache;
+         if (!cache.pool) cache.pool = {};
+         let filename = i_path.join(base, ...path);
+         let mimetype = Mime.lookup(filename);
+         if (mimetype !== Mime._default) {
+            res.setHeader('Content-Type', mimetype);
+         }
+         let buf = cache.pool[filename];
+         if (!buf) {
+            if (!i_fs.existsSync(filename)) {
+               return false;
+            }
+            buf = i_fs.readFileSync(filename);
+            cache.pool[filename] = buf;
+            cache.size += buf.length + filename.length;
+            while (cache.size > cache.max_size) {
+               let keys = Object.keys(cache.pool);
+               let key = keys[~~(Math.random() * keys.length)];
+               let val = cache.pool[key];
+               if (!key || !val) return false; // should not be
+               delete cache.pool[key];
+               cache.size -= val.length + key.length;
+            }
+         }
+         res.write(buf);
+         res.end();
+         return true;
       }
    }
 };
