@@ -41,7 +41,7 @@ const service = {
          }
          if (m.cmd === 'auth') {
             if (!i_auth.check_login(m.username, m.uuid)) {
-               api.send_error(401, 'Not Authenticated');
+               api.send_error(ws, 401, 'Not Authenticated');
                return;
             }
             env.authenticated = true;
@@ -50,7 +50,7 @@ const service = {
             return;
          }
          if (!env.authenticated) {
-            api.send_error(401, 'Not Authenticated');
+            api.send_error(ws, 401, 'Not Authenticated');
             return;
          }
          switch (m.cmd) {
