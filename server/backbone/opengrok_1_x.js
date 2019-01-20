@@ -4,6 +4,12 @@ const i_doc = require('cheerio');
 
 let opengrok_cookie = i_req.jar();
 
+function remove_b_and_replace_br(text) {
+   text = text.replace(new RegExp('<b\s*/?>', 'g'), '');
+   text = text.replace(new RegExp('<br\s*/?>', 'g'), '\n');
+   return text;
+}
+
 function parse_cookie(text) {
    if (!text) return {};
    let keyval = text.split(';');
@@ -95,7 +101,7 @@ const mode = {
          let pages = doc('div#results > p > .sel')[0];
          if (pages) {
             let page_n = parseInt(doc(pages.parent).find('a').map(
-               (x) => doc(x).text()
+               (_, x) => doc(x).text()
             ).get().pop()) || 1;
             r.pages += page_n;
          } else {
@@ -133,6 +139,17 @@ const mode = {
                      text: text.substring(space1st+1)
                   });
                });
+               if (!current_file.matches.length) {
+                  // no element of a.s
+                  // for example,
+                  // history item does not have line number
+                  // and '<br/>' should be replaced by '\n'
+                  text = tr.find('td > .con').html();
+                  current_file.matches.push({
+                     lineno: 1,
+                     text: remove_b_and_replace_br(text)
+                  });
+               }
 
                if (!r.config) {
                   // parse and store once
