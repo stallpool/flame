@@ -36,7 +36,7 @@ const service = {
          try {
             m = JSON.parse(m);
          } catch(e) {
-            api.send_error(400, 'Bad Request');
+            api.send_error(ws, 400, 'Bad Request');
             return;
          }
          if (m.cmd === 'auth') {
