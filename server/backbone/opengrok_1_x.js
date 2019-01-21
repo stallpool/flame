@@ -39,6 +39,27 @@ function process_noauth(client, contents) {
    return true;
 }
 
+function set_mode_by_body(client, text, expected_mode) {
+   process_check_authed_for_jsecurity(client, text)
+   // || process_next(...)
+   || process_noauth(client, text); // no auth
+   let result = { mode: expected_mode };
+   if (expected_mode === client.get_mode()) {
+      if (expected_mode === 'noauth') {
+         result.ready = true;
+      } else {
+         result.ready = false;
+      }
+   } else {
+      // for example, if use jsecurity,
+      // if logged in, it will directly pass
+      client.set_mode(expected_mode);
+      result.ready = true;
+   }
+   return result;
+}
+
+
 const mode = {
    common: {
       search: (client, options) => new Promise((r, e) => {
@@ -221,6 +242,33 @@ const mode = {
    }
 };
 
+class OpenGrokResult {
+   constructor(client, text) {
+      this.client = client;
+      this.text = text;
+   }
+
+   ready() {
+      if (!this.text) return false;
+      return set_mode_by_body(
+         this.client, this.text, this.client.get_mode()
+      ).ready;
+   }
+
+   extract_projects() {
+      if (!this.text) return null;
+      return mode.common.get_projects(this.text);
+   }
+
+   extract_items(options) {
+      if (!this.text) return null;
+      let result = mode.common.get_items(this.text, options);
+      result.base = this.client.base.url;
+      return result;
+   }
+
+}
+
 class OpenGrokClient {
    constructor(base_url, _mode) {
       this.base = null;
@@ -240,13 +288,8 @@ class OpenGrokClient {
       };
    }
 
-   check_authed(expected_mode) {
-      if (!expected_mode) expected_mode = this.get_mode() || 'noauth';
+   check_authed() {
       return new Promise((r) => {
-         if (this.cache) {
-            return r(set_mode_by_body(this));
-         }
-         this.cache = null;
          i_req.get({
             url: this.base.url,
             jar: this.cookie,
@@ -255,63 +298,26 @@ class OpenGrokClient {
             if (err) {
                return e(err);
             }
-            this.cache = body;
-            r(set_mode_by_body(this));
+            r(new OpenGrokResult(this, body));
          });
       });
-
-      function set_mode_by_body(client) {
-         process_check_authed_for_jsecurity(client, client.cache)
-         // || process_next(...)
-         || process_noauth(client, client.cache); // no auth
-         let result = { mode: client.get_mode() };
-         if (expected_mode === client.get_mode()) {
-            if (expected_mode === 'noauth') {
-               result.ready = true;
-            } else {
-               result.ready = false;
-            }
-         } else {
-            // for example, if use jsecurity,
-            // if logged in, it will directly pass
-            client.set_mode(expected_mode);
-            result.ready = true;
-         }
-         return result;
-      }
    }
 
    login(username, password) {
-      this.cache = null;
       return new Promise((r, e) => {
          this.mode_api.login(this, username, password).then((res) => {
-            this.cache = res.contents;
-            r(res);
+            r(new OpenGrokResult(this, res.contents));
          }, e);
       });
    }
 
    search(options) {
-      this.cache = null;
       return new Promise((r, e) => {
          this.mode_api.search(this, options).then((res) => {
             // (define) res = contents
-            this.cache = res;
-            r(res);
+            r(new OpenGrokResult(this, res));
          }, e);
       });
-   }
-
-   extract_projects() {
-      if (!this.cache) return null;
-      return mode.common.get_projects(this.cache);
-   }
-
-   extract_items(options) {
-      if (!this.cache) return null;
-      let result = mode.common.get_items(this.cache, options);
-      result.base = this.base.url;
-      return result;
    }
 
    get_cookie() {
@@ -326,22 +332,11 @@ class OpenGrokClient {
       this.mode = m;
       this.mode_api = mode[m];
    }
-
-   get_cache() {
-      return this.cache;
-   }
-
-   set_cache(cache) {
-      this.cache = cache;
-   }
-
-   clear_cache() {
-      this.set_cache(null);
-   }
 }
 
 const api = {
    Client: OpenGrokClient,
+   Result: OpenGrokResult,
 };
 
 module.exports = api;
