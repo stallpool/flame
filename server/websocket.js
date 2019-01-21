@@ -1,6 +1,25 @@
 const i_ws = require('ws');
 const i_auth = require('./auth');
 
+const i_metasearch = {
+   opengrok_1_x: require('./backbone/metasearch/opengrok_1_x')
+};
+
+function process_cmd(ws, m, env) {
+   switch(m.cmd) {
+      case 'opengrok.search':
+      if (!m.query) return api.send_error(ws, 400, 'Bad Request');
+      i_metasearch.opengrok_1_x.websocket.search(env.uuid, ws, {
+         username: env.username,
+         query: m.query
+      });
+      break;
+      case 'opengrok.search.cancel':
+      i_metasearch.opengrok_1_x.websocket.cancel(env.uuid, ws);
+      break;
+   }
+}
+
 const api = {
    send_error: (ws, code, text) => {
       ws.send(JSON.stringify({error: text, code: code}));
@@ -53,8 +72,7 @@ const service = {
             api.send_error(ws, 401, 'Not Authenticated');
             return;
          }
-         switch (m.cmd) {
-         };
+         process_cmd(ws, m, env);
       });
       ws.on('close', () => {
       });

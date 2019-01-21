@@ -289,7 +289,7 @@ class OpenGrokClient {
    }
 
    check_authed() {
-      return new Promise((r) => {
+      return new Promise((r, e) => {
          i_req.get({
             url: this.base.url,
             jar: this.cookie,

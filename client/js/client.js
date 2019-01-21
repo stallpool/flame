@@ -36,41 +36,44 @@ var client = {
    }, // search
    user: {}, // user
    websocket: {
-      connect: function (env, retried) {
-         var url;
-         if (window.location.protocol === 'https:') {
-            url = 'wss://' + window.location.host;
-         } else {
-            url = 'ws://' + window.location.host;
-         }
-         url += '/ws';
-         var ws = new WebSocket(url,);
-         ws.addEventListener('open', function (ev) {
-            ws.send(JSON.stringify({
-               cmd: 'auth',
-               username: env.user.username,
-               uuid: env.user.uuid
-            }));
-         });
-         ws.addEventListener('error', function (ev) {
-            console.log('error', ev);
-         });
-         ws.addEventListener('close', function (ev) {
-            console.log('close', ev);
-            if (ev.code !== 1005) {
-               if (retried >= 3) {
-                  console.error('WebSocket is closed abnormally; crashed...');
+      connect: function (env, options, retried) {
+         return new Promise((r, e) => {
+            var url;
+            if (window.location.protocol === 'https:') {
+               url = 'wss://' + window.location.host;
+            } else {
+               url = 'ws://' + window.location.host;
+            }
+            url += '/ws';
+            var ws = new WebSocket(url,);
+            if (!options) options = {};
+            ws.addEventListener('open', options.onopen || function (ev) {
+               ws.send(JSON.stringify({
+                  cmd: 'auth',
+                  username: env.user.username,
+                  uuid: env.user.uuid
+               }));
+               r(ws);
+            });
+            ws.addEventListener('error', options.onerror || function (ev) {
+               console.log('error', ev);
+            });
+            ws.addEventListener('close', options.onclose || function (ev) {
+               console.log('close', ev);
+               if (ev.code !== 1005) {
+                  if (retried >= 3) {
+                     console.error('WebSocket is closed abnormally; crashed...');
+                     return;
+                  }
+                  console.warn('WebSocket is closed abnormally; reconnecting ...')
+                  client.websocket.connect(env, options, (retried||0)+1);
                   return;
                }
-               console.warn('WebSocket is closed abnormally; reconnecting ...')
-               client.websocket.connect(env, (retried||0)+1);
-               return;
-            }
+            });
+            ws.addEventListener('message', options.onmessage || function (ev) {
+               console.log('message', ev);
+            });
          });
-         ws.addEventListener('message', function (ev) {
-            console.log('message', ev);
-         });
-         return ws;
       }
    } // websocket
 };

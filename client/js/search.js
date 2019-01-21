@@ -82,6 +82,27 @@ var visualizer = {
          obj.ui, 'plugin-line', obj.item.uol, obj.item.name, obj.item.desc
       );
    },
+   opengrok_source: function (obj) {
+      visualizer._common.icon_title_desc_factory(
+         obj.ui, 'copy-line', obj.item.uol, obj.item.name, obj.item.desc
+      );
+      var matches = obj.item.matches;
+      var table = document.createElement('table');
+      var tbody = document.createElement('tbody');
+      table.appendChild(tbody);
+      matches.forEach(function (match) {
+         var tr, td;
+         tr = document.createElement('tr');
+         td = document.createElement('td');
+         td.appendChild(document.createTextNode(match.lineno));
+         tr.appendChild(td);
+         td = document.createElement('td');
+         td.appendChild(document.createTextNode(match.text));
+         tr.appendChild(td);
+         tbody.appendChild(tr);
+      });
+      obj.ui.desc.appendChild(table);
+   },
    _ext: {
       link: function (elem, item) {
          elem.innerHTML = ui.template.ext.link;
@@ -302,7 +323,7 @@ function search_do(query) {
    ui.app.panel.klist.innerHTML = ''; // '<div class="col-xs-12"><h3>Knowledge</h3></div>';
    ui.app.panel.qlist.classList.add('hide');
    ui.app.panel.klist.classList.add('hide');
-   client.search(query, env).then(function (obj) {
+   /*client.search(query, env).then(function (obj) {
       var klist = obj.result;
       switch(1) {
       default:
@@ -322,7 +343,131 @@ function search_do(query) {
          }
       }
       goto_app_loaded();
+   });*/
+   search_do_with_websocket(query);
+}
+
+var ws_results = [];
+var ws_split_stops = /[\s`~!@#$%^&*()-_=+[\]{}\\|:;"'<,>./?]+/;
+function search_token_map(token_map, tokens) {
+   tokens.forEach(function (token) {
+      if (!token) return;
+      if (!token_map[token]) token_map[token] = 0;
+      token_map[token] ++;
    });
+}
+function search_token_map_normalize(token_map) {
+   var tokens = Object.keys(token_map);
+   var counts = tokens.map(function (token) { return token_map[token]; });
+   if (!counts.length) return;
+   if (counts.length === 1) {
+      token_map[tokens[0]] = 1;
+      return;
+   }
+   var max = counts.reduce(function (x,y) { return Math.max(x,y); });
+   if (!max) max = 1;
+   tokens.forEach(function (token, index) {
+      token_map[token] = counts[index] / max;
+   });
+}
+function search_score(item, query) {
+   var query_token_map = {};
+   var score = 0;
+   search_token_map(query_token_map, query.split(ws_split_stops));
+   search_token_map_normalize(query_token_map);
+   item.matches.forEach(function (match) {
+      var item_token_map = {};
+      search_token_map(item_token_map, match.text.split(ws_split_stops));
+      search_token_map_normalize(item_token_map);
+      var line_score = 0;
+      Object.keys(query_token_map).forEach(function (token) {
+         var subscore = 1;
+         if (token in item_token_map) {
+            // hit
+            subscore *= 1 + item_token_map[token] * query_token_map[token] / 2;
+         } else {
+            // missing
+            subscore *= 1 - query_token_map[token] / 2;
+         }
+         line_score += subscore;
+      });
+      if (line_score > score) score = line_score;
+   });
+   return score;
+}
+function search_do_with_websocket(query) {
+   var status = {};
+   ws_results.forEach(function (c) {
+      ui.app.panel.klist.removeChild(c.dom);
+   });
+   ws_results = [];
+   ui.app.panel.qlist.innerHTML = generate_alert_html('Searching ...');
+   client.websocket.connect(env, {
+      onmessage: function (ev) {
+         var data = JSON.parse(ev.data);
+         if (data.result) {
+            ws_results.forEach(function (c) {
+               ui.app.panel.klist.removeChild(c.dom);
+            });
+            status[data.count] = true;
+            var base_url = data.result.base;
+            var config = data.result.config;
+            data.result.items.forEach(function (item) {
+               item.files.forEach(function (file) {
+                  var obj = {
+                     type: 'opengrok_source',
+                     name: item.path + file.name,
+                     uol: base_url + '/' + config.xref + item.path + file.name,
+                     matches: file.matches
+                  };
+                  var c = new ui.components.SearchItem(obj);
+                  c.score = search_score(obj, query);
+                  ws_results.push(c);
+               });
+            });
+            ws_results = ws_results.sort(function (a,b) { return b.score-a.score; });
+            ws_results = ws_results.slice(0, 25);
+            ws_results.forEach((c) => {
+               ui.app.panel.klist.appendChild(c.dom);
+            });
+         } else {
+            if (data.count) {
+               for (var i = 0; i < data.count; i++) {
+                  if (i in status) continue;
+                  status[i] = false;
+               }
+               status['_full'] = true;
+               status['_count'] = data.count;
+            } else {
+               ui.app.panel.qlist.innerHTML = generate_alert_html('Nothing found.');
+               status['_full'] = true;
+               status['_count'] = -1;
+            }
+         }
+         if (check_status_complete()) {
+            console.log('Done.');
+            ui.app.panel.qlist.innerHTML = '';
+            ev.target.close();
+         }
+      }
+   }).then((ws) => {
+      goto_app_loaded();
+      ui.app.panel.qlist.classList.remove('hide');
+      ui.app.panel.klist.classList.remove('hide');
+      ws.send(JSON.stringify({
+         cmd: 'opengrok.search',
+         query: query
+      }));
+   });
+
+   function check_status_complete() {
+      if (!status._full) return false;
+      return Object.keys(status).map(
+         function (x) { return status[x]}
+      ).reduce(
+         function (x, y) { return x&&y; }
+      );
+   }
 }
 
 login_and_start(env, goto_app_loading, init_app, encode_url_for_login('search.html'));
