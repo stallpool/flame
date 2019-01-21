@@ -2,8 +2,6 @@ const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
 
-let opengrok_cookie = i_req.jar();
-
 function remove_b_and_replace_br(text) {
    text = text.replace(new RegExp('<b\s*/?>', 'g'), '');
    text = text.replace(new RegExp('<br\s*/?>', 'g'), '\n');
@@ -28,19 +26,22 @@ function parse_cookie(text) {
    return json;
 }
 
-function process_check_authed_for_jsecurity(res, body, resolve_fn) {
-   if (body.indexOf('name="j_username"') < 0) return false;
-   if (body.indexOf('name="j_password"') < 0) return false;
-   let keyval = res.headers['set-cookie'];
-   if (!keyval) return false;
-   keyval = keyval.join('; ');
-   resolve_fn({ type: 'jsecurity' });
+function process_check_authed_for_jsecurity(client, contents) {
+   if (contents.indexOf('name="j_username"') < 0) return false;
+   if (contents.indexOf('name="j_password"') < 0) return false;
+   client.set_mode('jsecurity');
+   return true;
+}
+
+function process_noauth(client, contents) {
+   client.set_mode('noauth');
+   client.cache = contents;
    return true;
 }
 
 const mode = {
    common: {
-      search: (options) => new Promise((r, e) => {
+      search: (client, options) => new Promise((r, e) => {
          if (!options || !options.project) return e(options);
          if (!(
             options.fullsearch || options.definition || options.symbol || options.filepath || options.history
@@ -73,7 +74,7 @@ const mode = {
          ).join('&');
 
          let request_options = {
-            url: `${api.base.url}/search?${form}`,
+            url: `${client.base.url}/search?${form}`,
          };
          if (options.cookie) request_options.jar = options.cookie;
          i_req(request_options, (err, res, body) => {
@@ -92,7 +93,6 @@ const mode = {
       get_items: (search_contents, options) => {
          let doc = i_doc.load(search_contents);
          let r = {
-            base: api.base.root,
             pages: 0,
             items: []
          };
@@ -180,21 +180,21 @@ const mode = {
       }, // get_items
    },
    noauth: {
-      login: () => new Promise((r, e) => {
-         i_req.get(api.base.url, (err, res, body) => {
+      login: (client) => new Promise((r, e) => {
+         i_req.get(client.base.url, (err, res, body) => {
             if (err) {
                return e(err);
             }
             r({ contents: body });
          });
       }),
-      search: (options) => mode.common.search(options),
+      search: (client, options) => mode.common.search(client, options),
    },
    jsecurity: {
-      login: (username, password) => new Promise((r, e) => {
+      login: (client, username, password) => new Promise((r, e) => {
          i_req.post({
-            url: `${api.base.url}/j_security_check`,
-            jar: opengrok_cookie,
+            url: `${client.base.url}/j_security_check`,
+            jar: client.get_cookie(),
             form: {
                j_username: username,
                j_password: password,
@@ -214,37 +214,134 @@ const mode = {
             });
          });
       }), // login
-      search: (options) => {
-         options = Object.assign({ cookie: opengrok_cookie }, options);
-         return mode.common.search(options);
+      search: (client, options) => {
+         options = Object.assign({ cookie: client.get_cookie() }, options);
+         return mode.common.search(client, options);
       }, // search
    }
 };
 
-const api = {
-   base: null,
-   set_base: (url) => {
+class OpenGrokClient {
+   constructor(base_url, _mode) {
+      this.base = null;
+      this.cookie = i_req.jar();
+      this.mode = _mode || 'noauth';
+      this.mode_api = mode[this.mode];
+      this.projects = null;
+      this.search_result = null;
+      base_url && this.set_base(base_url);
+   }
+
+   set_base(url) {
       let parsed = i_url.parse(url);
-      api.base = {
+      this.base = {
          url,
          root: `${parsed.protocol}//${parsed.host}`
       };
-   },
-   check_authed: () => new Promise((r, e) => {
-      i_req.get({
-         url: api.base.url,
-         jar: opengrok_cookie,
-      }, (err, res, body) => {
-         // TODO: check err
-         if (err) {
-            return e(err);
+   }
+
+   check_authed(expected_mode) {
+      if (!expected_mode) expected_mode = this.get_mode() || 'noauth';
+      return new Promise((r) => {
+         if (this.cache) {
+            return r(set_mode_by_body(this));
          }
-         process_check_authed_for_jsecurity(res, body, r)
-         // || process_next(...)
-         || r({ type: 'noauth', contents: body }); // no auth
+         this.cache = null;
+         i_req.get({
+            url: this.base.url,
+            jar: this.cookie,
+         }, (err, res, body) => {
+            // TODO: check err
+            if (err) {
+               return e(err);
+            }
+            this.cache = body;
+            r(set_mode_by_body(this));
+         });
       });
-   }),
-   mode
+
+      function set_mode_by_body(client) {
+         process_check_authed_for_jsecurity(client, client.cache)
+         // || process_next(...)
+         || process_noauth(client, client.cache); // no auth
+         let result = { mode: client.get_mode() };
+         if (expected_mode === client.get_mode()) {
+            if (expected_mode === 'noauth') {
+               result.ready = true;
+            } else {
+               result.ready = false;
+            }
+         } else {
+            // for example, if use jsecurity,
+            // if logged in, it will directly pass
+            client.set_mode(expected_mode);
+            result.ready = true;
+         }
+         return result;
+      }
+   }
+
+   login(username, password) {
+      this.cache = null;
+      return new Promise((r, e) => {
+         this.mode_api.login(this, username, password).then((res) => {
+            this.cache = res.contents;
+            r(res);
+         }, e);
+      });
+   }
+
+   search(options) {
+      this.cache = null;
+      return new Promise((r, e) => {
+         this.mode_api.search(this, options).then((res) => {
+            // (define) res = contents
+            this.cache = res;
+            r(res);
+         }, e);
+      });
+   }
+
+   extract_projects() {
+      if (!this.cache) return null;
+      return mode.common.get_projects(this.cache);
+   }
+
+   extract_items(options) {
+      if (!this.cache) return null;
+      let result = mode.common.get_items(this.cache, options);
+      result.base = this.base.url;
+      return result;
+   }
+
+   get_cookie() {
+      return this.cookie;
+   }
+
+   get_mode() {
+      return this.mode;
+   }
+
+   set_mode(m) {
+      this.mode = m;
+      this.mode_api = mode[m];
+   }
+
+   get_cache() {
+      return this.cache;
+   }
+
+   set_cache(cache) {
+      this.cache = cache;
+   }
+
+   clear_cache() {
+      this.set_cache(null);
+   }
+}
+
+const api = {
+   Client: OpenGrokClient,
 };
 
 module.exports = api;
