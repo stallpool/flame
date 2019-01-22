@@ -27,6 +27,7 @@
     "cheerio": "^1.0.0-rc.2",
     "elasticsearch": "^15.3.0",
     "ldapjs": "^1.0.2",
+    "monarch.js": "^0.1.5",
     "request": "^2.88.0",
     "uuid": "^3.3.2",
     "ws": "^6.1.2"
