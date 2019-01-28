@@ -26,7 +26,11 @@ function before_login() {
 
 function init_app() {
    reload_on_hashchange();
+   ui.loading.classList.add('hide');
+   ui.app.self.classList.remove('hide');
    ui.editor.resize();
+   ui.loading.classList.remove('hide');
+   ui.app.self.classList.add('hide');
    load_code();
 }
 
