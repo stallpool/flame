@@ -33,5 +33,6 @@
     "ws": "^6.1.2"
   },
   "devDependencies": {
+    "monaco-editor": "^0.15.6"
   }
 }
