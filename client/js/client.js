@@ -34,10 +34,48 @@ var client = {
          });
       }
    }, // search
+   browse: {
+      get_file: function (env, project, path) {
+         return new Promise(function (r, e) {
+            ajax({
+               url: '/api/metasearch/opengrok_1_x/browse/file',
+               method: 'POST',
+               json: {
+                  username: env.user.username,
+                  uuid: env.user.uuid,
+                  project: project,
+                  path: path
+               }
+            }, function (result) {
+               r(JSON.parse(result));
+            }, function () {
+               r(null);
+            });
+         });
+      }, // get_file
+      get_dir: function (env, project, path) {
+         return new Promise(function (r, e) {
+            ajax({
+               url: '/api/metasearch/opengrok_1_x/browse/path',
+               method: 'POST',
+               json: {
+                  username: env.user.username,
+                  uuid: env.user.uuid,
+                  project: project,
+                  path: path
+               }
+            }, function (result) {
+               r(JSON.parse(result));
+            }, function () {
+               r(null);
+            });
+         });
+      }
+   },
    user: {}, // user
    websocket: {
       connect: function (env, options, retried) {
-         return new Promise((r, e) => {
+         return new Promise(function (r, e) {
             var url;
             if (window.location.protocol === 'https:') {
                url = 'wss://' + window.location.host;

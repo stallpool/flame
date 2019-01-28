@@ -14,13 +14,23 @@
          min-height:300px;
          border:1px solid grey;
       }
+      .home {
+         color: white;
+      }
+      .home:hover {
+         color: white;
+         text-decoration: none;
+      }
+      .home:visited {
+         color: white;
+      }
    </style>
 </head>
 <body class="full_window">
    <header class="header header-5">
       <div class="branding">
          <img class="header-icon" src="icon.svg" />&nbsp;
-         <span class="title">Flame</span>
+         <span class="title"><a class="home" href="/">Flame</a></span>
       </div>
       <div class="search">
          <label>
@@ -43,12 +53,13 @@
       <div class="content-container" style="display:block;">
          <div class="content-area">
 
-            <div id="container" class="editor"></div>
+            <div id="editor_container" class="editor"></div>
 
          </div>
       </div>
    </div>
    <script type="text/javascript" src="./js/common.js"></script>
+   <script type="text/javascript" src="./js/client.js"></script>
    <script src="./js/monaco-editor/dev/vs/loader.js"></script>
    <script src="./js/monaco-editor/flame/editor.js"></script>
    <script type="text/javascript" src="./js/view.js"></script>

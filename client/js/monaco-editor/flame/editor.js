@@ -6,16 +6,39 @@
    function FlameEditor (dom) {
       this.self = dom;
       this.api = null;
+      this.global = null;
+   }
+
+   function guess_lang_from_ext(path) {
+      var langs = monaco.languages.getLanguages();
+      var ext = path.split('.');
+      if (ext.length > 1) ext = ext.pop(); else ext = null;
+      if (!ext) return null;
+      ext = '.' + ext;
+      var lang = langs.filter(function (lang) {
+         return lang.extensions.indexOf(ext) >= 0;
+      })[0];
+      if (!lang) return null;
+      return lang.id;
    }
 
    FlameEditor.prototype = {
-      create: function () {
+      create: function (filename, text, options) {
          var _this = this;
+         if (!options) options = {};
+         // readOnly: true
          require([
             'vs/editor/editor.main',
             'flame/monaco.contribution'
          ], function () {
-            _this.debug(_this);
+            var lang =  guess_lang_from_ext(filename);
+            if (!options.languages) options.languages = lang;
+            if (!options.theme) options.theme = options.languages;
+            options.value = text;
+            _this.global = monaco;
+            _this.api = monaco.editor.create(_this.self, options);
+            _this.set_language(options.languages, options.theme);
+            //_this.debug(_this);
          });
       },
       resize: function () {
@@ -125,13 +148,6 @@
             ]
          });
          
-         editor.api = monaco.editor.create(document.getElementById('container'), {
-            theme: 'customizedDebugLang',
-            value: '',
-            language: 'customizedDebugLang',
-            // readOnly: true,
-         });
-
          editor.on_definition_click(function () {
             console.log(arguments);
          });

@@ -410,14 +410,15 @@ function search_do_with_websocket(query) {
                ui.app.panel.klist.removeChild(c.dom);
             });
             status[data.count] = true;
-            var base_url = data.result.base;
+            var base_url = window.location.protocol + '//' + window.location.host + '/view.html#'
             var config = data.result.config;
             data.result.items.forEach(function (item) {
                item.files.forEach(function (file) {
+                  console.log('debug:', data.result.base + '/' + config.xref + item.path + file.name);
                   var obj = {
                      type: 'opengrok_source',
                      name: item.path + file.name,
-                     uol: base_url + '/' + config.xref + item.path + file.name,
+                     uol: base_url + item.path + file.name,
                      matches: file.matches
                   };
                   var c = new ui.components.SearchItem(obj);

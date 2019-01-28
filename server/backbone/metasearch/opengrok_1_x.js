@@ -9,6 +9,12 @@ const system = {
 };
 Object.assign(system, i_keyval.get(keyval_key));
 
+function get_host_by_project_name(project) {
+   let hosts = Object.values(system.registry);
+   if (!hosts.length) return null;
+   let host = hosts.filter((x) => x.projects.indexOf(project) >= 0)[0];
+   return host;
+}
 const api = {
    admin: {
       list: (req, res, options) => {
@@ -25,6 +31,7 @@ const api = {
          let base_url = options.json.base_url;
          let security_mode = options.json.security_mode || 'noauth';
          let auth = options.json.auth;
+         let version = options.json.version;
 
          if (!base_url) return i_utils.Web.e400(res);
          if (!i_keyval.get(keyval_key)) i_keyval.set(keyval_key, system);
@@ -33,7 +40,7 @@ const api = {
             security_mode,
             auth: auth || {},
             projects: [],
-            client: new i_opengrok.Client(base_url, security_mode)
+            client: new i_opengrok.Client(base_url, security_mode, version),
          };
          system.registry[base_url] = registry;
          registry.client.check_authed().then((result) => {
@@ -58,8 +65,45 @@ const api = {
          delete system.registry[base_url];
       },
    },
+   browse: {
+      path: (req, res, options) => {
+         let project = options.json.project;
+         let path = options.json.path;
+
+         if (!project || !path) return i_utils.Web.e400(res);
+         let host = get_host_by_project_name(project);
+         if (!host) return i_utils.Web.e404(res);
+         host.client.xref_dir({
+            path: `/${project}${path}`
+         }).then((result) => {
+            result = result.extract_directory();
+            i_utils.Web.rjson(res, {
+               project, path,
+               items: result?result.items:[]
+            });
+         });
+      },
+      file: (req, res, options) => {
+         let project = options.json.project;
+         let path = options.json.path;
+
+         if (!project || !path) return i_utils.Web.e400(res);
+         let host = get_host_by_project_name(project);
+         if (!host) return i_utils.Web.e404(res);
+         host.client.xref_file({
+            path: `/${project}${path}`
+         }).then((result) => {
+            // TODO: check if result is binary or text
+            i_utils.Web.rjson(res, {
+               project, path,
+               text: result.text
+            });
+         });
+      },
+   },
 };
 i_utils.Web.require_admin_login_batch(api.admin);
+i_utils.Web.require_login_batch(api.browse);
 
 function websocket_send(ws, json) {
    try {

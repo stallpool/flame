@@ -8,6 +8,17 @@ function remove_b_and_replace_br(text) {
    return text;
 }
 
+const version_constants = {
+   '1.x': {
+      xref: 'xref',
+      raw: 'download',
+   },
+   '0.x': {
+      xref: 'xref',
+      raw: 'raw',
+   }
+}
+
 function parse_cookie(text) {
    if (!text) return {};
    let keyval = text.split(';');
@@ -105,6 +116,61 @@ const mode = {
             r(body);
          });
       }), // search
+      browse: (client, options) => new Promise((r, e) => {
+         if (!options.path) return e(options);
+         if (!options.prefix) options.prefix = '';
+         let request_options = {
+            url: `${client.base.url}/${options.prefix}${options.path}`,
+            followAllRedirects: true
+         };
+         if (options.cookie) request_options.jar = options.cookie;
+         i_req(request_options, (err, res, body) => {
+            if (err) return e(err);
+            r(body);
+         })
+      }),
+      get_xref_item: (xref_contents) => {
+         let doc = i_doc.load(xref_contents);
+         // xref: ...
+         let path = doc('#Masthead').text();
+         path = path.split(' ').pop();
+         // table
+         let columns = null;
+         let items = doc('#dirlist tr').map((_, elem) => {
+            let cells = doc(elem).find('td'), x;
+            if (cells.length === 1) {
+               x = doc(cells[0]);
+               // opengrok 0.x [skip] Up to higher level directory
+               //              colspan = 4
+               return;
+            }
+            if (cells.length > 1) {
+               let data = cells.map((_, elem) => doc(elem).text().trim()).get();
+               if (!columns) {
+                  columns = data;
+                  return null;
+               }
+               let data_json = {};
+               data.forEach((value, index) => {
+                  let key = columns[index];
+                  if (!key) return;
+                  key = key.toLowerCase();
+                  data_json[key] = value;
+               });
+               // opengrok 1.x [skip] item of `..`
+               if (data_json.name === '..') return null;
+               // Size | 1.x: '-', 0.x: ''
+               return data_json;
+            }
+            cells = doc(elem).find('th');
+            if (cells.length > 0) {
+               columns = cells.map((_, elem) => doc(elem).text().trim()).get();
+            } else {
+               return null;
+            }
+         }).get().filter((x) => !!x);
+         return { path, items };
+      }, // get_xref_item
       get_projects: (base_contents) => {
          let doc = i_doc.load(base_contents);
          return doc('select#project.q option').map(
@@ -210,6 +276,8 @@ const mode = {
          });
       }),
       search: (client, options) => mode.common.search(client, options),
+      browse_path: (client, options) => mode.common.browse(client, options),
+      browse_file: (client, options) => mode.common.browse(client, options),
    },
    jsecurity: {
       login: (client, username, password) => new Promise((r, e) => {
@@ -239,6 +307,14 @@ const mode = {
          options = Object.assign({ cookie: client.get_cookie() }, options);
          return mode.common.search(client, options);
       }, // search
+      browse_path: (client, options) => {
+         options = Object.assign({ cookie: client.get_cookie() }, options);
+         return mode.common.browse(client, options)
+      },
+      browse_file: (client, options) => {
+         options = Object.assign({ cookie: client.get_cookie() }, options);
+         return mode.common.browse(client, options)
+      },
    }
 };
 
@@ -253,6 +329,11 @@ class OpenGrokResult {
       return set_mode_by_body(
          this.client, this.text, this.client.get_mode()
       ).ready;
+   }
+
+   extract_directory() {
+      if (!this.text) return null;
+      return mode.common.get_xref_item(this.text);
    }
 
    extract_projects() {
@@ -270,13 +351,14 @@ class OpenGrokResult {
 }
 
 class OpenGrokClient {
-   constructor(base_url, _mode) {
+   constructor(base_url, _mode, _version) {
       this.base = null;
       this.cookie = i_req.jar();
       this.mode = _mode || 'noauth';
       this.mode_api = mode[this.mode];
       this.projects = null;
       this.search_result = null;
+      this.version = _version || '1.x';
       base_url && this.set_base(base_url);
    }
 
@@ -315,6 +397,29 @@ class OpenGrokClient {
       return new Promise((r, e) => {
          this.mode_api.search(this, options).then((res) => {
             // (define) res = contents
+            r(new OpenGrokResult(this, res));
+         }, e);
+      });
+   }
+
+   xref_dir(options) {
+      options.prefix = version_constants[this.version];
+      if (options.prefix) options.prefix = options.prefix.xref;
+      if (options.path && options.path.charAt(options.path.length-1) !== '/') {
+         options.path += '/';
+      }
+      return new Promise((r, e) => {
+         this.mode_api.browse_path(this, options).then((res) => {
+            r(new OpenGrokResult(this, res));
+         }, e);
+      });
+   }
+
+   xref_file(options) {
+      options.prefix = version_constants[this.version];
+      if (options.prefix) options.prefix = options.prefix.raw;
+      return new Promise((r, e) => {
+         this.mode_api.browse_file(this, options).then((res) => {
             r(new OpenGrokResult(this, res));
          }, e);
       });
