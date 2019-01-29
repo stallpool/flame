@@ -35,11 +35,10 @@
          ], function () {
             // _this.debug(_this); options.languages = 'customizedDebugLang';
             var lang =  guess_lang_from_ext(filename);
-            if (!options.languages) options.languages = lang;
-            if (!options.theme) options.theme = options.languages;
+            var theme = options.theme || options.language || lang;
             _this.global = monaco;
-            _this.api = monaco.editor.create(_this.self);
-            _this.set_language(options.languages, options.theme);
+            _this.api = monaco.editor.create(_this.self, options);
+            _this.set_language(lang, theme);
             _this.api.setValue(text);
          });
       },
