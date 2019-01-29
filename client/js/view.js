@@ -59,7 +59,9 @@ function load_code() {
          if (!result) return error_file_not_found();
          ui.app.self.classList.remove('hide');
          ui.editor.resize();
-         ui.editor.create(result.path, result.text);
+         ui.editor.create(result.path, result.text, {
+            readOnly: true
+         });
          ui.editor.on_content_ready(ui_loaded);
       }, function () {
          error_file_not_found();
