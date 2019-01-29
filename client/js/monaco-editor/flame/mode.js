@@ -84,12 +84,12 @@ define(["require", "exports"], function (require, exports) {
          enumerable: true,
          configurable: true
       });
-      SuggestAdapter.prototype.provideCompletionItems = function (model, position, _context, token) {
+      SuggestAdapter.prototype.provideCompletionItems = function (model, position, _context) {
          var wordInfo = model.getWordUntilPosition(position);
          var resource = model.uri;
          var offset = this._positionToOffset(resource, position);
          return this._worker(resource).then(function (worker) {
-            return worker.getCompletionsAtPosition(model, position);
+            return worker.getCompletionsAtPosition(resource, position);
          }).then(function (info) {
             if (!info) {
                return;
@@ -108,10 +108,10 @@ define(["require", "exports"], function (require, exports) {
             };
          });
       };
-      SuggestAdapter.prototype.resolveCompletionItem = function (model, position, item, token) {
+      SuggestAdapter.prototype.resolveCompletionItem = function (model, position, item) {
          var _this = this;
          return this._worker(model.uri).then(function (worker) {
-            return worker.getCompletionEntryDetails(model, position, item.label);
+            return worker.getCompletionEntryDetails(item.uri.toString(), position, item.label);
          }).then(function (details) {
             if (!details) {
                return item;
@@ -136,10 +136,10 @@ define(["require", "exports"], function (require, exports) {
       function QuickInfoAdapter() {
          return _super !== null && _super.apply(this, arguments) || this;
       }
-      QuickInfoAdapter.prototype.provideHover = function (model, position, token) {
+      QuickInfoAdapter.prototype.provideHover = function (model, position) {
          var _this = this;
          return this._worker(model.uri).then(function (worker) {
-            return worker.getQuickInfoAtPosition(model, position, token);
+            return worker.getQuickInfoAtPosition(model.uri.toString(), position);
          }).then(function (info) {
             if (!info) {
                return;
@@ -160,10 +160,10 @@ define(["require", "exports"], function (require, exports) {
       function DefinitionAdapter() {
          return _super !== null && _super.apply(this, arguments) || this;
       }
-      DefinitionAdapter.prototype.provideDefinition = function (model, position, token) {
+      DefinitionAdapter.prototype.provideDefinition = function (model, position) {
          var _this = this;
          return this._worker(model.uri).then(function (worker) {
-            return worker.getDefinitionAtPosition(model, position, token);
+            return worker.getDefinitionAtPosition(model.uri.toString(), position);
          }).then(function (entries) {
             if (!entries) {
                return;
@@ -223,10 +223,12 @@ define(["require", "exports"], function (require, exports) {
          this._lastUsedTime = Date.now();
          if (!this._client) {
             this._worker = monaco.editor.createWebWorker({
-               moduleId: 'flame/worker',
+               moduleId: '/js/monaco-editor/flame/worker',
                label: this._modeId,
                // passed in to the create() method
-               createData: {}
+               createData: {
+                  lang: this._modeId
+               }
             });
             var p = this._worker.getProxy();
             this._client = p;
