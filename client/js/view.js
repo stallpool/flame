@@ -30,6 +30,103 @@ require.config({ paths: {
    'flame': './js/monaco-editor/flame'
 }});
 
+function util_hash_path(hash) {
+   return '/' + hash.project + hash.path;
+}
+
+function util_string_times(ch, n) {
+   var r = '';
+   while(n > 0) {
+      r += ch;
+      n --;
+   }
+   return r;
+}
+
+function util_lookup_token (token_list, offset) {
+   if (!token_list) return null;
+   if (!token_list.length) return null;
+   var s = 0, e = token_list.length-1, m, x;
+   while (e - s > 0) {
+      m = ~~((s+e)/2);
+      x = token_list[m];
+      if (!x) return null;
+      if (x.startOffset > offset ) {
+         e = m;
+         continue;
+      }
+      if (x.endOffset < offset) {
+         s = m+1;
+         continue;
+      }
+      if (x.startOffset <= offset && x.endOffset >= offset) {
+         return x;
+      }
+      return null;
+   }
+   if (e === s && e >= 0 && e <= token_list.length) {
+      x = token_list[e];
+      if (x.startOffset <= offset && x.endOffset >= offset) {
+         return x;
+      }
+   }
+   return null;
+}
+
+function generate_directory_info(dir_item) {
+   if (!dir_item.items || !dir_item.items.length) {
+      return 'Empty Directory';
+   }
+   var base = util_hash_path(dir_item);
+   var head = Object.keys(dir_item.items[0]);
+   var count = head.map(function (cell) { return cell.length; }), items = [];
+   var i = head.indexOf('name');
+   head[i] = head[0];
+   head[0] = 'name';
+   dir_item.items.forEach(function (item) {
+      var row = head.map(function (key) {
+         if (key === 'name') item[key] = './' + item[key];
+         return item[key] + ' ';
+      });
+      row.forEach(function (cell, index) {
+         if (!count[index]) count[index] = 0;
+         if (cell.length > count[index]) count[index] = cell.length;
+      });
+      items.push(row);
+   });
+   items.unshift(count.map(function (n) {
+      return util_string_times('-', n);
+   }));
+   items.unshift(head);
+   var text = items.map(function (row) {
+      return row.map(function (cell, index) {
+         return cell + util_string_times(' ', count[index] - cell.length);
+      }).join('|');
+   });
+   var offset = 0;
+   var tokens = text.map(function (line, index) {
+      if (index < 2) {
+         offset += line.length+1;
+         return null;
+      }
+      var filename = line.split(' ')[0];
+      var r = {
+         startOffset: offset,
+         endOffset: offset + filename.length,
+         hash: base + filename.substring(2),
+         description: 'Ctrl + Click (Cmd + Click on MacOS) to select'
+      };
+      offset += line.length+1;
+      return r;
+   }).filter(function (x) { return !!x; });
+   return {
+      info: {
+         tokens: tokens
+      },
+      text: text.join('\n')
+   }
+}
+
 function ui_loading() {
    ui.loading.classList.remove('hide');
    ui.app.self.classList.add('hide');
@@ -63,7 +160,7 @@ function load_code() {
    };
    if (!hash.project || !hash.path) return error_file_not_found();
    var isdir = hash.path.charAt(hash.path.length-1) === '/';
-   ui.breadcrumb.layout('/' + hash.project + '/' + hash.path);
+   ui.breadcrumb.layout(util_hash_path(hash));
    if (!isdir) {
       client.browse.get_file(
          env, hash.project, hash.path
@@ -71,10 +168,12 @@ function load_code() {
          if (!result) return error_file_not_found();
          ui.app.self.classList.remove('hide');
          ui.editor.resize();
-         ui.editor.create(result.path, result.text, {
+         ui.editor.create(result.path, result.text, {}, {
             readOnly: true
          });
-         ui.editor.on_content_ready(ui_loaded);
+         ui.editor.on_content_ready(function () {
+            ui_loaded();
+         });
       }, function () {
          error_file_not_found();
       });
@@ -85,8 +184,24 @@ function load_code() {
          if (!result) return error_file_not_found();
          ui.app.self.classList.remove('hide');
          ui.editor.resize();
-         ui.editor.create(result.path + '.json', JSON.stringify(result.items, null, 3));
-         ui.editor.on_content_ready(ui_loaded);
+         var directory_info = generate_directory_info(result);
+         ui.editor.create(
+            result.path + '.__dir__',
+            directory_info.text,
+            directory_info.info,
+            { readOnly: true }
+         );
+         ui.editor.on_content_ready(function () {
+            ui.editor.define_directory_lang();
+            ui.editor.on_definition_click(function (evt) {
+               var model = ui.editor.api.getModel();
+               var offset = model.getOffsetAt(evt.target.position);
+               var information = monaco.languages.FlameLanguage.Information.get();
+               var token = util_lookup_token(information.tokens, offset);
+               window.location.hash = '#' + token.hash;
+            });
+            ui_loaded();
+         });
       }, function () {
          error_file_not_found();
       })

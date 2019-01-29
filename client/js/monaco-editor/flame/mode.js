@@ -15,8 +15,8 @@ define(["require", "exports"], function (require, exports) {
    'use strict';
    Object.defineProperty(exports, "__esModule", { value: true });
    var flameWorker;
-   function setupFlame(defaults, lang) {
-      flameWorker = setupMode(defaults, lang);
+   function setupFlame(defaults, lang, information) {
+      flameWorker = setupMode(defaults, lang, information);
    }
    exports.setupFlame = setupFlame;
    function getFlameWorker() {
@@ -28,8 +28,8 @@ define(["require", "exports"], function (require, exports) {
       });
    }
    exports.getFlameWorker = getFlameWorker;
-   function setupMode(defaults, modeId) {
-      var client = new WorkerManager(modeId, defaults);
+   function setupMode(defaults, modeId, information) {
+      var client = new WorkerManager(modeId, defaults, information);
       var worker = function (first) {
          var more = [];
          for (var _i = 1; _i < arguments.length; _i++) {
@@ -86,10 +86,9 @@ define(["require", "exports"], function (require, exports) {
       });
       SuggestAdapter.prototype.provideCompletionItems = function (model, position, _context) {
          var wordInfo = model.getWordUntilPosition(position);
-         var resource = model.uri;
          var offset = this._positionToOffset(resource, position);
-         return this._worker(resource).then(function (worker) {
-            return worker.getCompletionsAtPosition(resource, position);
+         return this._worker(model.uri).then(function (worker) {
+            return worker.getCompletionsAtPosition(model.uri.toString(), offset);
          }).then(function (info) {
             if (!info) {
                return;
@@ -110,8 +109,9 @@ define(["require", "exports"], function (require, exports) {
       };
       SuggestAdapter.prototype.resolveCompletionItem = function (model, position, item) {
          var _this = this;
+         var offset = this._positionToOffset(model.uri, position);
          return this._worker(model.uri).then(function (worker) {
-            return worker.getCompletionEntryDetails(item.uri.toString(), position, item.label);
+            return worker.getCompletionEntryDetails(item.uri.toString(), offset, item.label);
          }).then(function (details) {
             if (!details) {
                return item;
@@ -138,8 +138,9 @@ define(["require", "exports"], function (require, exports) {
       }
       QuickInfoAdapter.prototype.provideHover = function (model, position) {
          var _this = this;
+         var offset = this._positionToOffset(model.uri, position);
          return this._worker(model.uri).then(function (worker) {
-            return worker.getQuickInfoAtPosition(model.uri.toString(), position);
+            return worker.getQuickInfoAtPosition(model.uri.toString(), offset);
          }).then(function (info) {
             if (!info) {
                return;
@@ -162,8 +163,9 @@ define(["require", "exports"], function (require, exports) {
       }
       DefinitionAdapter.prototype.provideDefinition = function (model, position) {
          var _this = this;
+         var offset = this._positionToOffset(model.uri, position);
          return this._worker(model.uri).then(function (worker) {
-            return worker.getDefinitionAtPosition(model.uri.toString(), position);
+            return worker.getDefinitionAtPosition(model.uri.toString(), offset);
          }).then(function (entries) {
             if (!entries) {
                return;
@@ -187,8 +189,9 @@ define(["require", "exports"], function (require, exports) {
     *  Licensed under the MIT License. See License.txt in the project root for license information.
     *--------------------------------------------------------------------------------------------*/
    var WorkerManager = /** @class */ (function () {
-      function WorkerManager(modeId, defaults) {
+      function WorkerManager(modeId, defaults, information) {
          var _this = this;
+         this._information = information;
          this._modeId = modeId;
          this._defaults = defaults;
          this._worker = null;
@@ -227,7 +230,8 @@ define(["require", "exports"], function (require, exports) {
                label: this._modeId,
                // passed in to the create() method
                createData: {
-                  lang: this._modeId
+                  lang: this._modeId,
+                  information: this._information
                }
             });
             var p = this._worker.getProxy();

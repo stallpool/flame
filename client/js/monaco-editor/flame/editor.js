@@ -24,7 +24,7 @@
    }
 
    FlameEditor.prototype = {
-      create: function (filename, text, options) {
+      create: function (filename, text, information, options) {
          var _this = this;
          if (_this._content_loading) return e(_this._content_loading);
          if (!options) options = {};
@@ -33,9 +33,9 @@
             'vs/editor/editor.main',
             'flame/monaco.contribution'
          ], function () {
-            // _this.debug(_this); options.languages = 'customizedDebugLang';
             var lang =  guess_lang_from_ext(filename);
             var theme = options.theme || options.language || lang;
+            monaco.languages.FlameLanguage.Information.assign(information);
             _this.global = monaco;
             _this.api = monaco.editor.create(_this.self, options);
             _this.set_language(lang, theme);
@@ -109,57 +109,33 @@
             endColumn: end_column
          });
       },
-      debug: function (editor) {
-         monaco.languages.register({
-            id: 'customizedDebugLang'
-         });
-         monaco.languages.setMonarchTokensProvider('customizedDebugLang', {
-            stop: /[\s`~!@#$%^&*()-+=[\]{}\\|:;"'<>,./?]/,
-            escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-            digits: /\d+(_+\d+)*/,
-            hexdigits: /[[0-9a-fA-F]+(_+[0-9a-fA-F]+)*/,
-            ipv4: /\d{2,3}.\d{2,3}.\d{2,3}.\d{2,3}/,
-            tokenizer: {
-               root: [
-                  [/\[error.*/, "custom-error"],
-                  [/\[notice.*/, "custom-notice"],
-                  [/\[info.*/, "custom-info"],
-                  [/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+]\d{4}/, "custom-date"],
-                  [/\s\/[^\s]+/, "custom-file"],
-                  [/(@ipv4)/, 'custom-ip'],
-                  [/(@digits)[eE]([\-+]?(@digits))?/, 'custom-number'],
-                  [/(@digits)\.(@digits)([eE][\-+]?(@digits))?/, 'custom-number'],
-                  [/0[xX](@hexdigits)/, 'custom-hex'],
-                  [/(@digits)/, 'custom-number'],
-                  [/[a-zA-Z_$][\w$]*/, {
-                     cases: {
-                        '@default': 'custom-word'
-                     }
-                  }]
-               ],
-            }
-         });
-         // Define a new theme that constains only rules that match this language
-         monaco.editor.defineTheme('customizedDebugLang', {
-            base: 'vs',
-            inherit: false,
-            rules: [
-               { token: 'custom-info', foreground: '808080' },
-               { token: 'custom-error', foreground: 'ff0000', fontStyle: 'bold' },
-               { token: 'custom-notice', foreground: 'FFA500' },
-               { token: 'custom-date', foreground: '008800' },
-               { token: 'custom-file', foreground: '008888' },
-               { token: 'custom-ip', foreground: '0000FF' },
-               { token: 'custom-number', foreground: 'CC0088' },
-               { token: 'custom-hex', foreground: 'CC0088' },
-               { token: 'custom-word', foreground: '000001' }
-            ]
-         });
-         
-         editor.on_definition_click(function () {
-            console.log(arguments);
-         });
-      }
+      define_directory_lang: function () {
+         var lang = 'flameInternalDirectory';
+         var lang_item = monaco.languages.getLanguages().filter(
+            function (x) { return x.id == lang; }
+         )[0];
+         if (!lang_item) {
+            monaco.languages.register({
+               id: lang,
+               extensions: ['.__dir__']
+            });
+            monaco.languages.setMonarchTokensProvider(lang, {
+               tokenizer: {
+                  root: [
+                     [/\.\/[^\s]+[\s]/, 'custom-file']
+                  ]
+               }
+            });
+            monaco.editor.defineTheme(lang, {
+               base: 'vs',
+               inherit: false,
+               rules: [
+                  { token: 'custom-file', foreground: '008888' }
+               ]
+            });
+         }
+         this.set_language(lang, lang);
+      },
    };
 
    window.FlameEditor = FlameEditor;

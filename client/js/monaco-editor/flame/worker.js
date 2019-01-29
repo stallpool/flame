@@ -6,6 +6,7 @@ define(["require", "exports"], function (require, exports) {
          this._languageService = lang_service_api.createLanguageService(this);
          this._ctx = ctx;
          this._lang = env.lang;
+         this._information = env.information;
       }
       // --- language service host ---------------
       FlameWorker.prototype.getLanguageIdentifier = function () { return this._lang; };
@@ -36,22 +37,25 @@ define(["require", "exports"], function (require, exports) {
          };
       };
       // --- language features
-      FlameWorker.prototype.getCompletionsAtPosition = function (fileName, position) {
+      FlameWorker.prototype.getCompletionsAtPosition = function (fileName, offset) {
          var model = this._getModel(fileName);
-         return Promise.resolve(this._languageService.getCompletionsAtPosition(model, position));
+         return Promise.resolve(this._languageService.getCompletionsAtPosition(model, offset));
       };
-      FlameWorker.prototype.getCompletionsEntryDetails = function (fileName, position, label) {
+      FlameWorker.prototype.getCompletionsEntryDetails = function (fileName, offset, label) {
          var model = this._getModel(fileName);
-         return Promise.resolve(this._languageService.getCompletionsEntryDetails(model, position, label));
+         return Promise.resolve(this._languageService.getCompletionsEntryDetails(model, offset, label));
       };
-      FlameWorker.prototype.getQuickInfoAtPosition = function (fileName, position) {
+      FlameWorker.prototype.getQuickInfoAtPosition = function (fileName, offset) {
          var model = this._getModel(fileName);
-         return Promise.resolve(this._languageService.getQuickInfoAtPosition(model, position));
+         return Promise.resolve(this._languageService.getQuickInfoAtPosition(model, offset));
       };
-      FlameWorker.prototype.getDefinitionAtPosition = function (fileName, position) {
+      FlameWorker.prototype.getDefinitionAtPosition = function (fileName, offset) {
          var model = this._getModel(fileName);
-         return Promise.resolve(this._languageService.getDefinitionAtPosition(model, position));
+         return Promise.resolve(this._languageService.getDefinitionAtPosition(model, offset));
       };
+      FlameWorker.prototype.getInformation = function () {
+         return this._information;
+      }
       return FlameWorker;
    }());
    exports.FlameWorker = FlameWorker;
@@ -61,37 +65,41 @@ define(["require", "exports"], function (require, exports) {
    exports.create = create;
 
    // language service
-   function SourceCode(model, worker) {
-      this.model = model;
-      this.worker = worker;
-      this.text = model.getValue();
-      this.lang = worker.getLanguageIdentifier() || null;
-   }
-   SourceCode.prototype = {
-      check_update: function () {
-         var text = this.model.getValue();
-         if (this.text !== text) {
-            this.text = text;
+
+   function lookup_token (token_list, offset) {
+      if (!token_list) return null;
+      if (!token_list.length) return null;
+      var s = 0, e = token_list.length-1, m, x;
+      while (e - s > 0) {
+         m = ~~((s+e)/2);
+         x = token_list[m];
+         if (!x) return null;
+         if (x.startOffset > offset ) {
+            e = m;
+            continue;
          }
-      },
-   };
-   var source_code = null;
-   function sync_host_data(model, worker) {
-      if (!source_code) {
-         source_code = new SourceCode(model, worker);
+         if (x.endOffset < offset) {
+            s = m+1;
+            continue;
+         }
+         if (x.startOffset <= offset && x.endOffset >= offset) {
+            return x;
+         }
+         return null;
       }
-      if (!source_code) return false;
-      source_code.check_update(model);
-      return true;
-   };
-   function get_language_token_at_position(model, position) {
+      if (e === s && e >= 0 && e <= token_list.length) {
+         x = token_list[e];
+         if (x.startOffset <= offset && x.endOffset >= offset) {
+            return x;
+         }
+      }
       return null;
    }
 
    var lang_service_api = {
       createLanguageService: function (worker) {
          return {
-            getCompletionsAtPosition: function (model, position) {
+            getCompletionsAtPosition: function (model, offset) {
                return {
                   entries: [{
                      name: 'debug',
@@ -113,26 +121,23 @@ define(["require", "exports"], function (require, exports) {
                   documentation: []
                };
             }, // auto complete - item detail
-            getQuickInfoAtPosition: function (model, position) {
-               if (!sync_host_data(model, worker)) return null;
-               var token = get_language_token_at_position(model, position);
+            getQuickInfoAtPosition: function (model, offset) {
+               var info = worker.getInformation();
+               if (!info) return null;
+               var token = lookup_token(info.tokens, offset);
                if (!token) return null;
-   
-               var displayed_text = '[' + token.ref_type + '] ' + token.text;
                return {
                   documentation: [],
                   tags: null,
                   textSpan: {
-                     length: token.text.length,
-                     start: token.offset
+                     start: token.startOffset,
+                     length: token.endOffset - token.startOffset
                   },
-                  displayParts: [{text: displayed_text}]
+                  displayParts: [{ text: token.description }]
                };
             }, // quick info
-            getDefinitionAtPosition: function (model, position) {
-               if (!sync_host_data(model, worker)) return null;
-               var token = get_language_token_at_position(model, position);
-               if (!token) return null;
+            getDefinitionAtPosition: function (model, offset) {
+               return null;
    
                return [{
                   containterName: 'debug',
