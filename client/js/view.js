@@ -142,8 +142,32 @@ function before_login() {
 }
 
 function init_app() {
-   reload_on_hashchange();
+   reset_for_hashchange();
    load_code();
+}
+
+function reset_for_hashchange() {
+   window.addEventListener('hashchange', function () {
+      if (ui.editor.api) {
+         ui.editor.api.getModel().dispose();
+         ui.editor.api.dispose();
+         require(['flame/mode'], function (flame_mode) {
+            flame_mode.getFlameWorkerManager().then(function (manager) {
+               manager.dispose();
+               reload();
+            }, function () {
+               reload();
+            });
+         });
+      } else {
+         reload();
+      }
+
+      function reload() {
+         ui_loading();
+         load_code();
+      }
+   });
 }
 
 function error_file_not_found() {

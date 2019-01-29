@@ -15,6 +15,7 @@ define(["require", "exports"], function (require, exports) {
    'use strict';
    Object.defineProperty(exports, "__esModule", { value: true });
    var flameWorker;
+   var flameWorkerManager;
    function setupFlame(defaults, lang, information) {
       flameWorker = setupMode(defaults, lang, information);
    }
@@ -28,8 +29,18 @@ define(["require", "exports"], function (require, exports) {
       });
    }
    exports.getFlameWorker = getFlameWorker;
+   function getFlameWorkerManager() {
+      return new Promise(function (resolve, reject) {
+         if (!flameWorkerManager) {
+            return reject("Flame mode is not registered!");
+         }
+         resolve(flameWorkerManager);
+      });
+   }
+   exports.getFlameWorkerManager = getFlameWorkerManager;
    function setupMode(defaults, modeId, information) {
       var client = new WorkerManager(modeId, defaults, information);
+      flameWorkerManager = client;
       var worker = function (first) {
          var more = [];
          for (var _i = 1; _i < arguments.length; _i++) {
