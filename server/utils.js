@@ -81,13 +81,30 @@ const WebServer = {
          if (mimetype !== Mime._default) {
             res.setHeader('Content-Type', mimetype);
          }
-         let buf = cache.pool[filename];
-         if (!buf) {
+         let buf = cache.pool[filename], state;
+         if (buf) {
+            if (!i_fs.existsSync(filename)) {
+               delete buf[filename];
+               return false;
+            }
+            state = i_fs.statSync(filename);
+            if (buf.mtime === state.mtimeMs) {
+               buf = buf.raw;
+            } else {
+               buf.mtime = state.mtimeMs;
+               buf.raw = i_fs.readFileSync(filename);
+               buf = buf.raw;
+            }
+         } else {
             if (!i_fs.existsSync(filename)) {
                return false;
             }
             buf = i_fs.readFileSync(filename);
-            cache.pool[filename] = buf;
+            state = i_fs.statSync(filename);
+            cache.pool[filename] = {
+               mtime: state.mtimeMs,
+               raw: buf
+            };
             cache.size += buf.length + filename.length;
             while (cache.size > cache.max_size) {
                let keys = Object.keys(cache.pool);
@@ -95,7 +112,7 @@ const WebServer = {
                let val = cache.pool[key];
                if (!key || !val) return false; // should not be
                delete cache.pool[key];
-               cache.size -= val.length + key.length;
+               cache.size -= val.raw.length + key.length;
             }
          }
          res.write(buf);
