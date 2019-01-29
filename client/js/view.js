@@ -2,6 +2,7 @@
 
 // @include common.js
 // @include client.js
+// @include component/breadcrumb.js
 // @include monaco-editor/dev/vs/loader.js
 // @include monaco-editor/flame/editor.js
 
@@ -11,7 +12,17 @@ var ui = {
    app: {
       self: dom('#p_app'),
    },
-   editor: new FlameEditor(dom('#editor_container'))
+   editor: new FlameEditor(dom('#editor_container')),
+   breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
+      on_click: function (elem, crumbs, index) {
+         var new_hash = '#/' + crumbs.slice(0, index+1).map(
+            function (x) { return x.text; }
+         ).filter(
+            function (x) { return !!x }
+         ).join('/') + '/';
+         window.location.hash = new_hash;
+      }
+   })
 };
 
 require.config({ paths: {
@@ -52,6 +63,7 @@ function load_code() {
    };
    if (!hash.project || !hash.path) return error_file_not_found();
    var isdir = hash.path.charAt(hash.path.length-1) === '/';
+   ui.breadcrumb.layout('/' + hash.project + '/' + hash.path);
    if (!isdir) {
       client.browse.get_file(
          env, hash.project, hash.path
@@ -73,7 +85,7 @@ function load_code() {
          if (!result) return error_file_not_found();
          ui.app.self.classList.remove('hide');
          ui.editor.resize();
-         ui.editor.create(result.path + '.json', JSON.stringify(result.items));
+         ui.editor.create(result.path + '.json', JSON.stringify(result.items, null, 3));
          ui.editor.on_content_ready(ui_loaded);
       }, function () {
          error_file_not_found();
