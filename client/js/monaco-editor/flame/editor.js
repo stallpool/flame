@@ -25,6 +25,7 @@
    FlameEditor.prototype = {
       create: function (filename, text, options) {
          var _this = this;
+         if (_this._content_loading) return e(_this._content_loading);
          if (!options) options = {};
          // readOnly: true
          require([
@@ -34,10 +35,10 @@
             var lang =  guess_lang_from_ext(filename);
             if (!options.languages) options.languages = lang;
             if (!options.theme) options.theme = options.languages;
-            options.value = text;
             _this.global = monaco;
-            _this.api = monaco.editor.create(_this.self, options);
+            _this.api = monaco.editor.create(_this.self);
             _this.set_language(options.languages, options.theme);
+            _this.api.setValue(text);
             //_this.debug(_this);
          });
       },
@@ -51,6 +52,13 @@
       dispose: function () {
          if (!this.api) return;
          this.api.dispose();
+      },
+      on_content_ready: function (fn, self) {
+         if (!self) self = this;
+         if (!self.api) {
+            return setTimeout(self.on_content_ready, 0, fn, self);
+         }
+         fn && fn();
       },
       on_definition_click: function (fn) {
          // hack way to take control on definition click (ctrl+click, cmd+click)

@@ -19,25 +19,29 @@ require.config({ paths: {
    'flame': './js/monaco-editor/flame'
 }});
 
-function before_login() {
+function ui_loading() {
    ui.loading.classList.remove('hide');
    ui.app.self.classList.add('hide');
 }
 
-function init_app() {
-   reload_on_hashchange();
+function ui_loaded() {
    ui.loading.classList.add('hide');
    ui.app.self.classList.remove('hide');
-   ui.editor.resize();
-   ui.loading.classList.remove('hide');
-   ui.app.self.classList.add('hide');
+}
+
+function before_login() {
+   ui_loading();
+}
+
+function init_app() {
+   reload_on_hashchange();
    load_code();
 }
 
 function error_file_not_found() {
    ui.loading.classList.remove('hide');
    ui.app.self.classList.add('hide');
-   ui.loading.querySelector('.text-center').innerHTML = '<strong>File Not Found!</storng>';
+   ui.loading.querySelector('#loading_text').innerHTML = '<strong>File Not Found!</storng>';
 }
 
 function load_code() {
@@ -53,9 +57,10 @@ function load_code() {
          env, hash.project, hash.path
       ).then(function (result) {
          if (!result) return error_file_not_found();
-         ui.editor.create(result.path, result.text);
-         ui.loading.classList.add('hide');
          ui.app.self.classList.remove('hide');
+         ui.editor.resize();
+         ui.editor.create(result.path, result.text);
+         ui.editor.on_content_ready(ui_loaded);
       }, function () {
          error_file_not_found();
       });
@@ -64,9 +69,10 @@ function load_code() {
          env, hash.project, hash.path
       ).then(function (result) {
          if (!result) return error_file_not_found();
-         ui.editor.create(result.path + '.json', JSON.stringify(result.items));
-         ui.loading.classList.add('hide');
          ui.app.self.classList.remove('hide');
+         ui.editor.resize();
+         ui.editor.create(result.path + '.json', JSON.stringify(result.items));
+         ui.editor.on_content_ready(ui_loaded);
       }, function () {
          error_file_not_found();
       })
