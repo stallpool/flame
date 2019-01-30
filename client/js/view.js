@@ -73,6 +73,37 @@ function util_lookup_token (token_list, offset) {
    return null;
 }
 
+function util_limit_path(path, length) {
+   if (!path) return path;
+   if (path.length <= length) return path;
+   var isdir = path.charAt(path.length-1) === '/';
+   path = path.split('/');
+   var head_index = 0;
+   var tail_index = path.length - (isdir?2:1);
+   var head = path[head_index];
+   if (!head) head = path[++head_index];
+   if (tail_index - head_index <= 1) return path;
+   var tail = path[tail_index];
+   var hide = ' ... ';
+   var r = [];
+   path = path.slice(head_index+1, tail_index);
+   length -= tail.length + head.length + hide.length;
+   var n = path.length, i = n-1;
+   for (; i >= 0 && length > 0; i--) {
+      var one = path[i];
+      length -= one.length;
+      r.unshift(one);
+   }
+   if (i >= 0) {
+      r.unshift(hide);
+   }
+   r.unshift(head);
+   r.unshift('');
+   r.push(tail);
+   if (isdir) r.push('');
+   return r.join('/');
+}
+
 function generate_directory_info(dir_item) {
    if (!dir_item.items || !dir_item.items.length) {
       return 'Empty Directory';
@@ -103,18 +134,20 @@ function generate_directory_info(dir_item) {
          return cell + util_string_times(' ', count[index] - cell.length);
       }).join('|');
    });
-   var offset = 0;
+   var head_text = '[Ctrl+Click (Cmd+Click on Mac) to follow the link to file or directory]\n\n';
+   var offset = head_text.length;
    var tokens = text.map(function (line, index) {
       if (index < 2) {
          offset += line.length+1;
          return null;
       }
       var filename = line.split(' ')[0];
+      var full_filename = base + filename.substring(2);
       var r = {
          startOffset: offset,
          endOffset: offset + filename.length,
-         hash: base + filename.substring(2),
-         description: 'Ctrl + Click (Cmd + Click on MacOS) to select'
+         hash: full_filename,
+         description: util_limit_path(full_filename, 60)
       };
       offset += line.length+1;
       return r;
@@ -123,7 +156,7 @@ function generate_directory_info(dir_item) {
       info: {
          tokens: tokens
       },
-      text: text.join('\n')
+      text: head_text + text.join('\n')
    }
 }
 
