@@ -92,6 +92,7 @@ function util_limit_path(path, length) {
    for (; i >= 0 && length > 0; i--) {
       var one = path[i];
       length -= one.length;
+      if (length < 0) break;
       r.unshift(one);
    }
    if (i >= 0) {
