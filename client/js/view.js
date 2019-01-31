@@ -142,7 +142,7 @@ function generate_directory_info(dir_item) {
          offset += line.length+1;
          return null;
       }
-      var filename = line.split(' ')[0];
+      var filename = line.split('|')[0].trim();
       var full_filename = base + filename.substring(2);
       var r = {
          startOffset: offset,
