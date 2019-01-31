@@ -1,14 +1,93 @@
-const i_opengrok = require('../opengrok_1_x');
 const i_keyval = require('../../keyval');
 const i_utils = require('../../utils');
+const i_metasearch = {
+   opengrok_1_x: require('../opengrok_1_x')
+};
 
-const keyval_key = 'api.opengrok.state';
+/***** follow the interface to define new type of metasearch integration
+ * 
+ * interface MetaSearchResult {
+ *    ready() {
+ *       return result is available in true/false;
+ *    }
+ * 
+ *    extract_directory() {
+ *       extract result into list
+ *       return a list of file/directory items { name, ... };
+ *    }
+ * 
+ *    extract_projects() {
+ *       extract result into projects
+ *       return a list of projects 'string'
+ *    }
+ * 
+ *    extract_items(options) {
+ *       extract result into search result item
+ *       return {
+ *          items: [{
+ *             path,
+ *             files: [{
+ *                name,
+ *                matches: [{
+ *                   lineno, text
+ *                }]
+ *             }]
+ *          }]
+ *       }
+ *    }
+ * }
+ * 
+ * interface MetaSearchClient {
+ *    constructor(base_url, _mode, _version) {
+ *    }
+ * 
+ *    check_authed() {
+ *       return new Promise((r, e) => {
+ *          r(new MetaSearchResult());
+ *       });
+ *    }
+ * 
+ *    login(username, password) {
+ *       return new Promise((r, e) => {
+ *          r(new MetaSearchResult());
+ *       });
+ *    }
+ * 
+ *    search(options) {
+ *       return new Promise((r, e) => {
+ *          r(new MetaSearchResult());
+ *       });
+ *    }
+ * 
+ *    xref_dir(options) {
+ *       options = { path }
+ *       return new Promise((r, e) => {
+ *          r(new MetaSearchResult());
+ *       });
+ *    }
+ * 
+ *    xref_file(options) {
+ *       options = { path };
+ *       return new Promise((r, e) => {
+ *          r(new MetaSearchResult());
+ *       });
+ *    }
+ * }
+ */
+
+const keyval_key = 'api.metasearch.state';
 const system = {
    project_n_group: 40,
    registry: {}
 };
 Object.assign(system, i_keyval.get(keyval_key));
 
+function create_metasearch_client(metatype, base_url, security_mode, version) {
+   switch (metatype) {
+      case 'opengrok':
+         return new i_metasearch.opengrok_1_x.Client(base_url, security_mode, version);
+   }
+}
 function get_host_by_project_name(project) {
    let hosts = Object.values(system.registry);
    if (!hosts.length) return null;
@@ -28,19 +107,23 @@ const api = {
          i_utils.Web.rjson(res, obj);
       },
       register: (req, res, options) => {
+         let metatype = options.json.metatype;
          let base_url = options.json.base_url;
          let security_mode = options.json.security_mode || 'noauth';
          let auth = options.json.auth;
          let version = options.json.version;
 
-         if (!base_url) return i_utils.Web.e400(res);
+         if (!metatype || !base_url) return i_utils.Web.e400(res);
          if (!i_keyval.get(keyval_key)) i_keyval.set(keyval_key, system);
          let registry = {
+            metatype,
             base_url,
             security_mode,
             auth: auth || {},
             projects: [],
-            client: new i_opengrok.Client(base_url, security_mode, version),
+            client: create_metasearch_client(
+               metatype, base_url, security_mode, version
+            ),
          };
          system.registry[base_url] = registry;
          registry.client.check_authed().then((result) => {
@@ -79,7 +162,7 @@ const api = {
             result = result.extract_directory();
             i_utils.Web.rjson(res, {
                project, path,
-               items: result?result.items:[]
+               items: result ? result.items : []
             });
          });
       },
@@ -108,7 +191,7 @@ i_utils.Web.require_login_batch(api.browse);
 function websocket_send(ws, json) {
    try {
       ws.send(JSON.stringify(json));
-   } catch(e) {}
+   } catch (e) { }
 }
 
 const websocket = {
@@ -122,13 +205,13 @@ const websocket = {
          let projects = websocket.acl_filter(registry.projects, username);
          let project_n = projects.length;
          if (!project_n) return;
-         let group_n = Math.ceil(project_n/system.project_n_group);
+         let group_n = Math.ceil(project_n / system.project_n_group);
          for (let i = 0; i < group_n; i++) {
             tasks.push({
                client: registry.client,
                projects: projects.slice(
-                  i*system.project_n_group,
-                  (i+1)*system.project_n_group
+                  i * system.project_n_group,
+                  (i + 1) * system.project_n_group
                )
             });
          }
@@ -139,10 +222,10 @@ const websocket = {
    rank_tasks: (tasks, query) => new Promise((r, e) => {
       // sample: randomly rank projects;
       tasks = tasks.slice();
-      let t, i, j, k, n = tasks.length, m = ~~(n/2);
+      let t, i, j, k, n = tasks.length, m = ~~(n / 2);
       for (i = 0; i < m; i++) {
-         j = ~~(Math.random()*n);
-         k = ~~(Math.random()*n);
+         j = ~~(Math.random() * n);
+         k = ~~(Math.random() * n);
          t = tasks[j];
          tasks[j] = tasks[k];
          tasks[k] = t;
@@ -162,7 +245,7 @@ const websocket = {
          //       => D A D B D C D A D C D A C C
          if (i >= websocket.task_queue.length) {
             websocket.task_queue.push(task);
-            i ++;
+            i++;
          } else {
             websocket.task_queue.splice(i, 0, task);
             i += 2;
@@ -195,7 +278,7 @@ const websocket = {
       });
 
       function dec_and_update(config) {
-         config.count --;
+         config.count--;
          if (config) {
             if (!config.count) {
                config.status.val = 'complete';

@@ -1,21 +1,19 @@
 const i_ws = require('ws');
 const i_auth = require('./auth');
 
-const i_metasearch = {
-   opengrok_1_x: require('./backbone/metasearch/opengrok_1_x')
-};
+const i_metasearch = require('./backbone/metasearch/generic');
 
 function process_cmd(ws, m, env) {
    switch(m.cmd) {
-      case 'opengrok.search':
+      case 'metasearch.search':
       if (!m.query) return api.send_error(ws, 400, 'Bad Request');
-      i_metasearch.opengrok_1_x.websocket.search(env.uuid, ws, {
+      i_metasearch.websocket.search(env.uuid, ws, {
          username: env.username,
          query: m.query
       });
       break;
-      case 'opengrok.search.cancel':
-      i_metasearch.opengrok_1_x.websocket.cancel(env.uuid, ws);
+      case 'metasearch.search.cancel':
+      i_metasearch.websocket.cancel(env.uuid, ws);
       break;
    }
 }

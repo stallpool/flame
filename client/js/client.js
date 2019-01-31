@@ -38,7 +38,7 @@ var client = {
       get_file: function (env, project, path) {
          return new Promise(function (r, e) {
             ajax({
-               url: '/api/metasearch/opengrok_1_x/browse/file',
+               url: '/api/metasearch/browse/file',
                method: 'POST',
                json: {
                   username: env.user.username,
@@ -56,7 +56,7 @@ var client = {
       get_dir: function (env, project, path) {
          return new Promise(function (r, e) {
             ajax({
-               url: '/api/metasearch/opengrok_1_x/browse/path',
+               url: '/api/metasearch/browse/path',
                method: 'POST',
                json: {
                   username: env.user.username,

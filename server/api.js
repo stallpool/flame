@@ -4,9 +4,7 @@ const i_utils = require('./utils');
 
 const i_env = require('./env');
 
-const i_metasearch = {
-   opengrok_1_x: require('./backbone/metasearch/opengrok_1_x').api
-};
+const i_metasearch = require('./backbone/metasearch/generic').api;
 
 const api = {
    internal: {
@@ -104,9 +102,7 @@ const api = {
          );
       }
    }, // auth
-   metasearch: {
-      opengrok_1_x: i_metasearch.opengrok_1_x,
-   }, // metasearch
+   metasearch: i_metasearch,
 };
 
 if (!i_env.debug && !i_env.auth_internal) {

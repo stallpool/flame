@@ -82,7 +82,7 @@ var visualizer = {
          obj.ui, 'plugin-line', obj.item.uol, obj.item.name, obj.item.desc
       );
    },
-   opengrok_source: function (obj) {
+   metasearch_source: function (obj) {
       visualizer._common.icon_title_desc_factory(
          obj.ui, 'copy-line', obj.item.uol, obj.item.name, obj.item.desc
       );
@@ -416,7 +416,7 @@ function search_do_with_websocket(query) {
                item.files.forEach(function (file) {
                   console.log('debug:', data.result.base + '/' + config.xref + item.path + file.name);
                   var obj = {
-                     type: 'opengrok_source',
+                     type: 'metasearch_source',
                      name: item.path + file.name,
                      uol: base_url + item.path + file.name,
                      matches: file.matches
@@ -440,14 +440,17 @@ function search_do_with_websocket(query) {
                status['_full'] = true;
                status['_count'] = data.count;
             } else {
-               ui.app.panel.qlist.innerHTML = generate_alert_html('Nothing found.');
                status['_full'] = true;
                status['_count'] = -1;
             }
          }
          if (check_status_complete()) {
             console.log('Done.');
-            ui.app.panel.qlist.innerHTML = '';
+            if (ws_results.length) {
+               ui.app.panel.qlist.innerHTML = '';
+            } else {
+               ui.app.panel.qlist.innerHTML = generate_alert_html('Nothing found.');
+            }
             ev.target.close();
          }
       }
@@ -456,7 +459,7 @@ function search_do_with_websocket(query) {
       ui.app.panel.qlist.classList.remove('hide');
       ui.app.panel.klist.classList.remove('hide');
       ws.send(JSON.stringify({
-         cmd: 'opengrok.search',
+         cmd: 'metasearch.search',
          query: query
       }));
    });
