@@ -91,13 +91,18 @@ var visualizer = {
       var tbody = document.createElement('tbody');
       table.appendChild(tbody);
       matches.forEach(function (match) {
-         var tr, td;
+         var tr, td, a;
          tr = document.createElement('tr');
          td = document.createElement('td');
-         td.appendChild(document.createTextNode(match.lineno));
+         td.classList.add('text-right');
+         td.appendChild(document.createTextNode(match.lineno + ' '));
          tr.appendChild(td);
          td = document.createElement('td');
-         td.appendChild(document.createTextNode(match.text));
+         a = document.createElement('a');
+         a.href = 'view.html#' + obj.item.name + '?lineno=' + match.lineno;
+         a.target = '_blank';
+         a.appendChild(document.createTextNode(match.text));
+         td.appendChild(a);
          tr.appendChild(td);
          tbody.appendChild(tr);
       });

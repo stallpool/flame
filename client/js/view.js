@@ -30,6 +30,43 @@ require.config({ paths: {
    'flame': './js/monaco-editor/flame'
 }});
 
+function util_parse_path(path) {
+   var search = path;
+   var parsed = {};
+   if (!search) return parsed;
+   search = search.split('?');
+   parsed.path = search[0];
+   search = search[1];
+   if (!search) return parsed;
+   search = search.split('&');
+   if (!search.length) return parsed;
+   var map = {};
+   parsed.map = map;
+   search.forEach(function (one) {
+      var index = one.indexOf('=');
+      var key, value;
+      if (index < 0) {
+         key = one;
+         value = '';
+      } else {
+         key = one.substring(0, index);
+         value = one.substring(index+1);
+      }
+      key = decodeURIComponent(key);
+      value = decodeURIComponent(value);
+      if (key in map) {
+         if (map[key].length) {
+            map[key].push(value);
+         } else {
+            map[key] = [map[key], value];
+         }
+      } else {
+         map[key] = value;
+      }
+   });
+   return parsed;
+}
+
 function util_hash_path(hash) {
    return '/' + hash.project + hash.path;
 }
@@ -218,6 +255,9 @@ function load_code() {
    };
    if (!hash.project || !hash.path) return error_file_not_found();
    var isdir = hash.path.charAt(hash.path.length-1) === '/';
+   var hash_path = util_parse_path(hash.path);
+   hash.path = hash_path.path;
+   hash.search = hash_path.map;
    ui.breadcrumb.layout(util_hash_path(hash));
    if (!isdir) {
       client.browse.get_file(
@@ -231,6 +271,12 @@ function load_code() {
          });
          ui.editor.on_content_ready(function () {
             ui_loaded();
+            var lineno = parseInt(hash.search.lineno);
+            ui.editor.api.revealLineInCenter(lineno || 0);
+            ui.editor.api.setPosition({
+               lineNumber: lineno,
+               column: 0
+            });
          });
       }, function () {
          error_file_not_found();
