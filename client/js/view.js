@@ -214,7 +214,17 @@ function before_login() {
 
 function init_app() {
    reset_for_hashchange();
+   on_window_resize();
    load_code();
+}
+
+function on_window_resize() {
+   window.addEventListener('resize', function () {
+      if (ui.editor.api) {
+         ui.editor.resize();
+         ui.editor.api.layout();
+      }
+   });
 }
 
 function reset_for_hashchange() {
@@ -272,12 +282,14 @@ function load_code() {
          });
          ui.editor.on_content_ready(function () {
             ui_loaded();
-            var lineno = parseInt(hash.search.lineno);
-            ui.editor.api.revealLineInCenter(lineno || 0);
-            ui.editor.api.setPosition({
-               lineNumber: lineno,
-               column: 0
-            });
+            if (hash.search && hash.search.lineno) {
+               var lineno = parseInt(hash.search.lineno);
+               ui.editor.api.revealLineInCenter(lineno || 0);
+               ui.editor.api.setPosition({
+                  lineNumber: lineno,
+                  column: 0
+               });
+            }
          });
       }, function () {
          error_file_not_found();
