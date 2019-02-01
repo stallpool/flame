@@ -222,6 +222,7 @@ function reset_for_hashchange() {
       if (ui.editor.api) {
          ui.editor.api.getModel().dispose();
          ui.editor.api.dispose();
+         ui.editor.api = null;
          require(['flame/mode'], function (flame_mode) {
             flame_mode.getFlameWorkerManager().then(function (manager) {
                manager.dispose();
