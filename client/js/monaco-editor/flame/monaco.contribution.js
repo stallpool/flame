@@ -64,7 +64,11 @@ define(["require", "exports", "vs/editor/editor.main"], function (require, expor
       }
    
       [
-         'flameInternalDirectory'
+         'flameInternalDirectory',
+         'typescript', 'c', 'cpp', 'csharp', 'dockerfile', 'fsharp', 'go',
+         'html', 'css', 'javascript', 'java', 'less', 'lua', 'markdown',
+         'objective-c', 'php', 'powershell', 'python', 'r', 'ruby', 'rust',
+         'scss', 'swift', 'vb', 'clojure', 'shell', 'perl'
       ].forEach(function (lang) {
          monaco.languages.onLanguage(lang, function () {
             return getMode().then(function (mode) {

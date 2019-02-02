@@ -9,8 +9,12 @@
 var env = {};
 var ui = {
    loading: dom('#p_loading'),
-   app: {
-      self: dom('#p_app'),
+   app: dom('#p_app'),
+   btn: {
+      search: dom('#btn_search')
+   },
+   txt: {
+      search: dom('#txt_search')
    },
    editor: new FlameEditor(dom('#editor_container')),
    breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
@@ -200,12 +204,12 @@ function generate_directory_info(dir_item) {
 
 function ui_loading() {
    ui.loading.classList.remove('hide');
-   ui.app.self.classList.add('hide');
+   ui.app.classList.add('hide');
 }
 
 function ui_loaded() {
    ui.loading.classList.add('hide');
-   ui.app.self.classList.remove('hide');
+   ui.app.classList.remove('hide');
 }
 
 function before_login() {
@@ -215,7 +219,23 @@ function before_login() {
 function init_app() {
    reset_for_hashchange();
    on_window_resize();
+   register_events();
    load_code();
+}
+
+function register_events() {
+   ui.btn.search.addEventListener('click', function (evt) {
+      if (evt.target.tagName.toLowerCase() !== 'label') return;
+      on_search(ui.txt.search.value);
+   });
+   ui.txt.search.addEventListener('keyup', function (evt) {
+      if (evt.keyCode === 13) {
+         return on_search(ui.txt.search.value);
+      }
+   });
+}
+function on_search(query) {
+   window.location = 'search.html?q=' + encodeURIComponent(query);
 }
 
 function on_window_resize() {
@@ -236,6 +256,7 @@ function reset_for_hashchange() {
          require(['flame/mode'], function (flame_mode) {
             flame_mode.getFlameWorkerManager().then(function (manager) {
                manager.dispose();
+               monaco.languages.FlameLanguage.Information.reset();
                reload();
             }, function () {
                reload();
@@ -254,7 +275,7 @@ function reset_for_hashchange() {
 
 function error_file_not_found() {
    ui.loading.classList.remove('hide');
-   ui.app.self.classList.add('hide');
+   ui.app.classList.add('hide');
    ui.loading.querySelector('#loading_text').innerHTML = '<strong>File Not Found!</storng>';
 }
 
@@ -275,11 +296,14 @@ function load_code() {
          env, hash.project, hash.path
       ).then(function (result) {
          if (!result) return error_file_not_found();
-         ui.app.self.classList.remove('hide');
+         ui.app.classList.remove('hide');
          ui.editor.resize();
-         ui.editor.create(result.path, result.text, {}, {
-            readOnly: true
-         });
+         ui.editor.create(
+            result.path,
+            result.text,
+            result.info || {},
+            { readOnly: true }
+         );
          ui.editor.on_content_ready(function () {
             ui_loaded();
             if (hash.search && hash.search.lineno) {
@@ -290,6 +314,18 @@ function load_code() {
                   column: 0
                });
             }
+            ui.editor.on_definition_click(function (evt) {
+               var model = ui.editor.api.getModel();
+               var offset = model.getOffsetAt(evt.target.position);
+               var information = monaco.languages.FlameLanguage.Information.get();
+               var token = util_lookup_token(information.tokens, offset);
+               if (!token) {
+                  // infile cross reference jump
+                  ui.editor._backup.on_definition_click(evt);
+                  return;
+               }
+               window.location.hash = '#' + token.hash;
+            });
          });
       }, function () {
          error_file_not_found();
@@ -299,7 +335,7 @@ function load_code() {
          env, hash.project, hash.path
       ).then(function (result) {
          if (!result) return error_file_not_found();
-         ui.app.self.classList.remove('hide');
+         ui.app.classList.remove('hide');
          ui.editor.resize();
          var directory_info = generate_directory_info(result);
          ui.editor.create(
@@ -315,6 +351,7 @@ function load_code() {
                var offset = model.getOffsetAt(evt.target.position);
                var information = monaco.languages.FlameLanguage.Information.get();
                var token = util_lookup_token(information.tokens, offset);
+               if (!token) return;
                window.location.hash = '#' + token.hash;
             });
             ui_loaded();

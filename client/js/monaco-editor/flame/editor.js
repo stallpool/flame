@@ -79,9 +79,14 @@
             }
          */
          if (!this.api) return;
+         if (!this._backup) this._backup = {};
+         var _this = this;
          var contrib_gotodefinition = this.api.getContribution('editor.contrib.gotodefinitionwithmouse');
          contrib_gotodefinition.toUnhook.forEach(function (x) {
             if (!x || !x.onExecute) return;
+            if (!_this._backup.on_definition_click) {
+               _this._backup.on_definition_click = x._onExecute._listeners._first.element;
+            }
             x._onExecute._listeners._first.element = fn;
          });
       },
