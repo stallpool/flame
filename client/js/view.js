@@ -235,6 +235,7 @@ function register_events() {
    });
 }
 function on_search(query) {
+   if (!query) return;
    window.location = 'search.html?q=' + encodeURIComponent(query);
 }
 

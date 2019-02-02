@@ -95,6 +95,7 @@ var visualizer = {
          tr = document.createElement('tr');
          td = document.createElement('td');
          td.classList.add('text-right');
+         td.classList.add('lineno');
          td.appendChild(document.createTextNode(match.lineno + ' '));
          tr.appendChild(td);
          td = document.createElement('td');
