@@ -1,9 +1,9 @@
 const i_fs = require('fs');
 const i_path = require('path');
-const i_auth = require('./auth');
-const i_env = require('./env');
 const i_http = require('http');
 const i_url = require('url');
+const i_auth = require('./auth');
+const i_env = require('./env');
 
 const WebServer = {
    create: (router) => {
@@ -495,6 +495,50 @@ const List = {
    },
 };
 
+const CLI = {
+   parse: () => {
+      let argregex = /^--?[\w\d][^\s=]*/;
+      let argv = process.argv;
+      let index = argv.map((one, i) => {
+         let match = argregex.exec(one);
+         if (match) {
+            match = match[0];
+            let value = one.substring(match.length).trim();
+            if (value && value.charAt(0) === '=') value = value.substring(1);
+            return {
+               name: match,
+               index: i,
+               value: value
+            };
+         }
+         return -1;
+      }).filter((x) => !!x);
+      let i = 2, n = argv.length;
+      let j = 0, m = index.length;
+      let current_name = '_argv';
+      let map = { _argv: [] };
+      while (i < n) {
+         if (index[j] && i == index[j].index) {
+            let cursor = index[j++];
+            current_name = cursor.name;
+            if (cursor.value) {
+               if (map[current_name]) {
+                  map[current_name].push(cursor.value);
+               } else {
+                  map[current_name] = [cursor.value];
+               }
+            } else {
+               if (!map[current_name]) map[current_name] = [];
+            }
+         } else {
+            map[current_name].push(argv[i]);
+         }
+         i ++;
+      }
+      return map;
+   }
+};
+
 module.exports = {
    WebServer,
    Storage,
@@ -504,4 +548,5 @@ module.exports = {
    Functools,
    Codec,
    List,
+   CLI,
 };

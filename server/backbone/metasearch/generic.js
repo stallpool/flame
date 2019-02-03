@@ -8,7 +8,7 @@ const i_metasearch = {
  * 
  * interface MetaSearchResult {
  *    ready() {
- *       return result is available in true/false;
+ *       return result is available (e.g. logged in) in true/false;
  *    }
  * 
  *    extract_directory() {
@@ -195,14 +195,15 @@ function websocket_send(ws, json) {
 }
 
 const websocket = {
-   acl_filter: (projects, username) => {
+   acl_filter: (registry, username) => {
       // TODO: filter by username
+      var projects = registry.projects;
       return projects;
    },
    generate_tasks: (username) => new Promise((r, e) => {
       let tasks = [];
       Object.values(system.registry).forEach((registry) => {
-         let projects = websocket.acl_filter(registry.projects, username);
+         let projects = websocket.acl_filter(registry, username);
          let project_n = projects.length;
          if (!project_n) return;
          let group_n = Math.ceil(project_n / system.project_n_group);

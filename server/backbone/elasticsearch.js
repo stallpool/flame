@@ -1,16 +1,20 @@
 const i_es = require('elasticsearch');
 const i_uuid = require('uuid');
 
+const system = {
+   host: process.FLAME_ELASTICSEARCH || 'http://127.0.0.1:9200'
+};
+
 const api = {
    instance: null,
    gurantee_init: (cb) => {
       if (api.instance) return cb();
       api.instance = new i_es.Client({
-         host: 'http://127.0.0.1:9200'
+         host: system.host
       });
       return cb();
    },
-   search: (options) => gurantee_init(() => new Promise((r, e) => {
+   search: (options) => api.gurantee_init(() => new Promise((r, e) => {
       if (!options) return r(null);
       let index = options.index;
       let type = options.type;
@@ -22,7 +26,7 @@ const api = {
          if (res) r(res); else r(null);
       });
    })),
-   addoc: (options) => gurantee_init(() => new Promise((r, e) => {
+   addoc: (options) => api.gurantee_init(() => new Promise((r, e) => {
       if (!options) return r(null);
       let index = options.index;
       let type = options.type;
@@ -36,17 +40,17 @@ const api = {
                index, type, id: doc_id, body: { doc }
             }, () => {
                r({ index, type, id: doc_id });
-            });
+            }, e);
          } else {
             api.instance.create({
                index, type, id: doc_id, body: doc
             }, () => {
                r({ index, type, id: doc_id });
-            });
+            }, e);
          }
       });
    })),
-   deldoc: (options) => gurantee_init(() => new Promise((r, e) => {
+   deldoc: (options) => api.gurantee_init(() => new Promise((r, e) => {
       if (!options) return r(null);
       let index = options.index;
       let type = options.type;
@@ -55,7 +59,7 @@ const api = {
          index, type, id: doc_id
       }, () => {
          r({ index, type, id: doc_id });
-      });
+      }, e);
    })),
 };
 
