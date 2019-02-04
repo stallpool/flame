@@ -526,7 +526,7 @@ const CLI = {
                value: value
             };
          }
-         return -1;
+         return null;
       }).filter((x) => !!x);
       let i = 2, n = argv.length;
       let j = 0, m = index.length;
