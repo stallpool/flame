@@ -11,7 +11,7 @@ const usage = `[CLI] Make indexes for latest file lines into ElasticSearch.
 Options:
    -h, --help      show this help information
    --host          set ElasticSearch client host; default http://127.0.0.1:9200
-   -p, --parallel  set max parallel write request; default 5
+   -p, --parallel  set max parallel write request to ElasticSearch; default 5
 `;
 
 
@@ -157,9 +157,10 @@ function main(argv) {
          '.shtml', '.xhtml', '.jsp', '.asp', '.aspx', '.java', '.md',
          '.fs', '.lua', '.m', '.mm', '.php', '.py', '.r', '.rb',
          '.xml', '.json', '.yaml', '.sql', '.txt', '.sh', '.bat',
-         '.cmd', '.xml', '.json'
+         '.cmd', '.xml', '.json', '.sql'
       ].indexOf(extname) < 0) {
-         if (!filename.toLowerCase().endsWith('/readme')) {
+         let filename_lower = filename.toLowerCase();
+         if (!['/readme', '/license'].filter((x) => filename_lower.endsWith(x)).length) {
             return false;
          }
       }
