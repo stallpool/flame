@@ -151,6 +151,21 @@ const Storage = {
          });
       }
    },
+   list_files_without_nest: (dir) => {
+      let list = [];
+      dir = i_path.resolve(dir);
+      if (!i_fs.existsSync(dir)) return [];
+      i_fs.readdirSync(dir).forEach((name) => {
+         let filename = i_path.join(dir, name);
+         let state = i_fs.lstatSync(filename);
+         if (state.isDirectory()) {
+            list.push(name + '/');
+         } else {
+            list.push(name);
+         }
+      });
+      return list;
+   },
    make_directory: (dir) => {
       dir = i_path.resolve(dir);
       let parent_dir = i_path.dirname(dir);

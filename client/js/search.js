@@ -420,7 +420,6 @@ function search_do_with_websocket(query) {
             var config = data.result.config;
             data.result.items.forEach(function (item) {
                item.files.forEach(function (file) {
-                  console.log('debug:', data.result.base + '/' + config.xref + item.path + file.name);
                   var obj = {
                      type: 'metasearch_source',
                      name: item.path + file.name,

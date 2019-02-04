@@ -1,7 +1,8 @@
 const i_keyval = require('../../keyval');
 const i_utils = require('../../utils');
 const i_metasearch = {
-   opengrok_1_x: require('./opengrok_1_x')
+   opengrok_1_x: require('./opengrok_1_x'),
+   elasticsearch_6_x: require('./elasticsearch_6_x'),
 };
 
 /***** follow the interface to define new type of metasearch integration
@@ -13,7 +14,8 @@ const i_metasearch = {
  * 
  *    extract_directory() {
  *       extract result into list
- *       return a list of file/directory items { name, ... };
+ *       `items` is a list of file/directory items { name, ... };
+ *       return { path, items }
  *    }
  * 
  *    extract_projects() {
@@ -43,12 +45,14 @@ const i_metasearch = {
  * 
  *    check_authed() {
  *       return new Promise((r, e) => {
+ *          // make sure extract_projects works in result
  *          r(new MetaSearchResult());
  *       });
  *    }
  * 
  *    login(username, password) {
  *       return new Promise((r, e) => {
+ *          // make sure extract_projects works
  *          r(new MetaSearchResult());
  *       });
  *    }
@@ -86,6 +90,8 @@ function create_metasearch_client(metatype, base_url, security_mode, version) {
    switch (metatype) {
       case 'opengrok':
          return new i_metasearch.opengrok_1_x.Client(base_url, security_mode, version);
+      case 'elasticsearch':
+         return new i_metasearch.elasticsearch_6_x.Client(base_url, security_mode, version);
    }
 }
 function get_host_by_project_name(project) {
@@ -155,6 +161,7 @@ const api = {
 
          if (!project || !path) return i_utils.Web.e400(res);
          let host = get_host_by_project_name(project);
+         // TODO: acl host, project, username
          if (!host) return i_utils.Web.e404(res);
          host.client.xref_dir({
             path: `/${project}${path}`
@@ -172,6 +179,7 @@ const api = {
 
          if (!project || !path) return i_utils.Web.e400(res);
          let host = get_host_by_project_name(project);
+         // TODO: acl host, project, username
          if (!host) return i_utils.Web.e404(res);
          host.client.xref_file({
             path: `/${project}${path}`
