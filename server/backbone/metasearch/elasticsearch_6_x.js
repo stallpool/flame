@@ -158,6 +158,7 @@ class ElasticSearchClient {
          if (!project_name) return e();
          let fullpath = i_path.join(project_name, path_obj.path);
          let files = i_utils.Storage.list_files_without_nest(fullpath);
+         if (!path_obj.path.endsWith('/')) path_obj.path += '/';
          let result = {
             project: path_obj.project,
             path: path_obj.path,
