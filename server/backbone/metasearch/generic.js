@@ -1,7 +1,7 @@
 const i_keyval = require('../../keyval');
 const i_utils = require('../../utils');
 const i_metasearch = {
-   opengrok_1_x: require('../opengrok_1_x')
+   opengrok_1_x: require('./opengrok_1_x')
 };
 
 /***** follow the interface to define new type of metasearch integration

@@ -50,6 +50,7 @@ const task = {
             }
          );
          console.log(`[index] "${new_task_file}" start`);
+         // TODO: if this file is indexed, remove and re-index
          setTimeout(task.execute, 0, cb);
          return;
       }
