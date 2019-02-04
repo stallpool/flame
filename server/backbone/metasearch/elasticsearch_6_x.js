@@ -53,10 +53,11 @@ class ElasticSearchResult {
       let list = this.json.hits.hits;
       let map = {};
       list.forEach((x) => {
-         let filepath = `/${x._source.project}/${x._source.path}`;
+         let filepath = `/${x._source.project}${x._source.path}`;
          filepath = filepath.split('/');
          let name = filepath.pop();
          let path = filepath.join('/');
+         if (!path.endsWith('/')) path += '/';
          let path_obj = map[path];
          if (!path_obj) {
             path_obj = { path, files: {} };
@@ -80,7 +81,6 @@ class ElasticSearchResult {
          });
       });
       return {
-         path: `/${this.json.project}${this.json.path}`,
          items: list
       };
    }
@@ -158,7 +158,6 @@ class ElasticSearchClient {
          if (!project_name) return e();
          let fullpath = i_path.join(project_name, path_obj.path);
          let files = i_utils.Storage.list_files_without_nest(fullpath);
-         if (!path_obj.path.endsWith('/')) path_obj.path += '/';
          let result = {
             project: path_obj.project,
             path: path_obj.path,
