@@ -2,6 +2,7 @@ const i_path = require('path');
 const i_fs = require('fs');
 const i_es = require('../elasticsearch');
 const i_utils = require('../../utils');
+const i_common = require('./common');
 
 const es_index = {
    latest_lines: {
@@ -50,6 +51,7 @@ class ElasticSearchResult {
    extract_items() {
       let r = { items: [] };
       if (!this.json) return r;
+      if (this.json.error) return r;
       let list = this.json.hits.hits;
       let map = {};
       list.forEach((x) => {
@@ -132,7 +134,7 @@ class ElasticSearchClient {
          if (!options) return e(options);
          let query = options.fullsearch;
          if (!query) return e(options);
-         this.client.search({
+         let search_options = {
             index: es_index.latest_lines.name,
             type: es_index.latest_lines.type,
             size: 100,
@@ -152,7 +154,8 @@ class ElasticSearchClient {
                   }, // bool
                } // query
             }, // options_query
-         }).then((result) => {
+         };
+         this.client.search(search_options).then((result) => {
             if (!result) return e();
             r(new ElasticSearchResult(this, result));
          }, e);
@@ -199,10 +202,12 @@ class ElasticSearchClient {
       });
    }
 
-   generate_tasks(projects, output_task_list, config) {
+   generate_tasks(query_map, projects, output_task_list, config) {
       return new Promise((r, e) => {
+         projects = i_common.query.filter_project(query_map, projects);
          output_task_list.push({
             client: this,
+            query: query_map.query,
             projects,
          });
          r();

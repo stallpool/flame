@@ -311,7 +311,7 @@ function init_app() {
 
 function search_redirect(query) {
    if (!query) {
-      window.location = '/question.html';
+      window.location = '/';
       return;
    }
    window.location = '/search.html?q=' + escape(query);

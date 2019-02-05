@@ -1,6 +1,7 @@
 const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
+const i_common = require('./common');
 
 function remove_b_and_replace_br(text) {
    text = text.replace(new RegExp('<b\s*/?>', 'g'), '');
@@ -429,7 +430,8 @@ class OpenGrokClient {
       });
    }
 
-   generate_tasks(projects, output_task_list, config) {
+   generate_tasks(query_map, projects, output_task_list, config) {
+      projects = i_common.query.filter_project(query_map, projects);
       return new Promise((r, e) => {
          let project_n = projects.length;
          if (!project_n) return r();
@@ -437,6 +439,7 @@ class OpenGrokClient {
          for (let i = 0; i < group_n; i++) {
             output_task_list.push({
                client: this,
+               query: query_map.query,
                projects: projects.slice(
                   i * system.project_n_group,
                   (i + 1) * system.project_n_group

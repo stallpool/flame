@@ -1,5 +1,6 @@
 const i_keyval = require('../../keyval');
 const i_utils = require('../../utils');
+const i_common = require('./common');
 const i_metasearch = {
    opengrok_1_x: require('./opengrok_1_x'),
    elasticsearch_6_x: require('./elasticsearch_6_x'),
@@ -77,7 +78,7 @@ const i_metasearch = {
  *       });
  *    }
  * 
- *    generate_tasks(projects, output_task_list, config) {
+ *    generate_tasks(query_map, projects, output_task_list, config) {
  *       return new Promise((r, e) => {
  *          write tasks into output_task_list
  *          r();
@@ -214,16 +215,12 @@ const websocket = {
       var projects = registry.projects;
       return projects;
    },
-   generate_tasks: (username) => new Promise((r, e) => {
+   generate_tasks: (username, query_map) => new Promise((r, e) => {
       let tasks = [];
       let project_visited = {};
       client_generate_tasks(Object.values(system.registry), 0, () => {
          r(tasks);
       });
-      Object.values(system.registry).forEach((registry) => {
-         let projects = websocket.acl_filter(registry, username);
-      })
-      // TODO: filter by username
 
       function client_generate_tasks(registry_list, index, cb) {
          if (registry_list.length <= index) {
@@ -240,7 +237,7 @@ const websocket = {
             // skip if no project
             return client_generate_tasks(registry_list, index+1, cb);
          }
-         registry.client.generate_tasks(projects, tasks, system).then(
+         registry.client.generate_tasks(query_map, projects, tasks, system).then(
             () => {
                client_generate_tasks(registry_list, index+1, cb);
             },
@@ -251,7 +248,7 @@ const websocket = {
          );
       }
    }),
-   rank_tasks: (tasks, query) => new Promise((r, e) => {
+   rank_tasks: (tasks, query_map) => new Promise((r, e) => {
       // sample: randomly rank projects;
       tasks = tasks.slice();
       let t, i, j, k, n = tasks.length, m = ~~(n / 2);
@@ -264,13 +261,13 @@ const websocket = {
       }
       r(tasks);
    }),
-   task_map: (uuid, tasks, query) => new Promise((r, e) => {
+   task_map: (uuid, tasks, query_map) => new Promise((r, e) => {
       let config_obj = websocket.task_config[uuid];
       if (!config_obj) return e(uuid);
       let i = 0;
       tasks.forEach((task) => {
          task.uuid = uuid;
-         task.query = query;
+         if (!task.query) task.query = query_map.query;
          // scheduler algorithm:
          // existing   A   B   C   A   C   A C C
          //  comming D   D   D   D   D   D
@@ -329,8 +326,9 @@ const websocket = {
       let config = {
          uuid, ws, status: { val: 'pending' }, count: 0
       };
+      let query_map = i_common.query.parse(options.query);
       websocket.task_config[uuid] = config;
-      websocket.generate_tasks(options.username).then((tasks) => {
+      websocket.generate_tasks(options.username, query_map).then((tasks) => {
          if (tasks.length) {
             websocket_send(config.ws, {
                result: null,
@@ -344,9 +342,9 @@ const websocket = {
             });
             return r();
          }
-         websocket.rank_tasks(tasks, options.query).then((tasks) => {
+         websocket.rank_tasks(tasks, query_map).then((tasks) => {
             config.count = tasks.length;
-            websocket.task_map(uuid, tasks, options.query).then(() => {
+            websocket.task_map(uuid, tasks, query_map).then(() => {
                config.status.val = 'planned';
                websocket.trigger_task_execute();
                r();
