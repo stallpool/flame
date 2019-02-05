@@ -80,6 +80,8 @@ class ElasticSearchResult {
             file_obj.matches = file_obj.matches.sort((a, b) => a.lineno - b.lineno);
          });
       });
+      // get top 25
+      list = list.slice(0, 25);
       return {
          items: list
       };
@@ -136,11 +138,20 @@ class ElasticSearchClient {
             size: 100,
             query: {
                query: {
-                  match: {
-                     line: query
-                  }
-               }
-            }
+                  bool: {
+                     must: {
+                        match: {
+                           line: query
+                        }
+                     },
+                     filter: {
+                        terms: {
+                           project: options.project
+                        }
+                     },
+                  }, // bool
+               } // query
+            }, // options_query
          }).then((result) => {
             if (!result) return e();
             r(new ElasticSearchResult(this, result));
@@ -187,6 +198,17 @@ class ElasticSearchClient {
          r(ret);
       });
    }
+
+   generate_tasks(projects, output_task_list, config) {
+      return new Promise((r, e) => {
+         output_task_list.push({
+            client: this,
+            projects,
+         });
+         r();
+      });
+   }
+
 }
 
 module.exports = {

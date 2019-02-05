@@ -19,6 +19,10 @@ const version_constants = {
    }
 }
 
+const system = {
+   project_n_group: 40,
+}
+
 function parse_cookie(text) {
    if (!text) return {};
    let keyval = text.split(';');
@@ -422,6 +426,24 @@ class OpenGrokClient {
          this.mode_api.browse_file(this, options).then((res) => {
             r(new OpenGrokResult(this, res));
          }, e);
+      });
+   }
+
+   generate_tasks(projects, output_task_list, config) {
+      return new Promise((r, e) => {
+         let project_n = projects.length;
+         if (!project_n) return r();
+         let group_n = Math.ceil(project_n / system.project_n_group);
+         for (let i = 0; i < group_n; i++) {
+            output_task_list.push({
+               client: this,
+               projects: projects.slice(
+                  i * system.project_n_group,
+                  (i + 1) * system.project_n_group
+               )
+            });
+         }
+         r();
       });
    }
 

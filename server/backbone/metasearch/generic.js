@@ -76,13 +76,19 @@ const i_metasearch = {
  *          r(new MetaSearchResult());
  *       });
  *    }
+ * 
+ *    generate_tasks(projects, output_task_list, config) {
+ *       return new Promise((r, e) => {
+ *          write tasks into output_task_list
+ *          r();
+ *       });
+ *    }
  * }
  */
 
 const keyval_key = 'api.metasearch.state';
 const system = {
-   project_n_group: 40,
-   registry: {}
+   registry: {},
 };
 Object.assign(system, i_keyval.get(keyval_key));
 
@@ -210,23 +216,40 @@ const websocket = {
    },
    generate_tasks: (username) => new Promise((r, e) => {
       let tasks = [];
+      let project_visited = {};
+      client_generate_tasks(Object.values(system.registry), 0, () => {
+         r(tasks);
+      });
       Object.values(system.registry).forEach((registry) => {
          let projects = websocket.acl_filter(registry, username);
-         let project_n = projects.length;
-         if (!project_n) return;
-         let group_n = Math.ceil(project_n / system.project_n_group);
-         for (let i = 0; i < group_n; i++) {
-            tasks.push({
-               client: registry.client,
-               projects: projects.slice(
-                  i * system.project_n_group,
-                  (i + 1) * system.project_n_group
-               )
-            });
-         }
       })
       // TODO: filter by username
-      r(tasks);
+
+      function client_generate_tasks(registry_list, index, cb) {
+         if (registry_list.length <= index) {
+            return cb && cb(tasks);
+         }
+         let registry = registry_list[index];
+         let projects = websocket.acl_filter(registry, username);
+         projects = projects.filter((project) => {
+            if (project in project_visited) return false;
+            project_visited[project] = 1;
+            return true;
+         });
+         if (!projects.length) {
+            // skip if no project
+            return client_generate_tasks(registry_list, index+1, cb);
+         }
+         registry.client.generate_tasks(projects, tasks, system).then(
+            () => {
+               client_generate_tasks(registry_list, index+1, cb);
+            },
+            (err) => {
+               console.log('[err] @client_generate_tasks:', err);
+               client_generate_tasks(registry_list, index+1, cb);
+            }
+         );
+      }
    }),
    rank_tasks: (tasks, query) => new Promise((r, e) => {
       // sample: randomly rank projects;
