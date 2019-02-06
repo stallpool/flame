@@ -13,8 +13,8 @@ const i_utils = require('../utils');
  *          - grant_access_to(p1, u1) => only u1 has access to p1
  *          - revoke_access_to(p1, u1) => everyone except u1 has access
  *          - grant_access_to(p1, u1), revoke_access_to(p1, u1) => everyone has access
- *          - grant_access_to(p1, u1), revoke_access_to(p1, u2) => only p1 has access
- *          - revoke_access_to(p1, u1), grant_access_to(p1, u2) => only p2 has access
+ *          - grant_access_to(p1, u1), revoke_access_to(p1, u2) => only u1 has access
+ *          - revoke_access_to(p1, u1), grant_access_to(p1, u2) => only u2 has access
  * }
  * acl.user.<username> = {
  *    project: { exclude: [] }

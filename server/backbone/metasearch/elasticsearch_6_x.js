@@ -172,6 +172,7 @@ class ElasticSearchClient {
          if (!project_name) return e();
          let fullpath = i_path.join(project_name, path_obj.path);
          let files = i_utils.Storage.list_files_without_nest(fullpath);
+         files = files.filter((name) => !name.startsWith('.'));
          let result = {
             project: path_obj.project,
             path: path_obj.path,
@@ -190,7 +191,14 @@ class ElasticSearchClient {
          let project_path = this.project_map[path_obj.project];
          if (!project_path) return e();
          let fullpath = i_path.join(project_path, path_obj.path);
-         let text = i_fs.readFileSync(fullpath).toString();
+         let name = fullpath.split('/').pop();
+         if (!name || name.startsWith('.')) return e();
+         let text = null;
+         try {
+            text = i_fs.readFileSync(fullpath).toString();
+         } catch (err) {
+            return e();
+         }
          let result = {
             project: path_obj.project,
             path: path_obj.path,
