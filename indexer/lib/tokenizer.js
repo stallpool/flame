@@ -1,29 +1,4 @@
 const i_path = require('path');
-const i_monarch = require('monarch.js');
-
-const tokenizer_set = {
-   bat: require('./lang/bat/tokenizer'),
-   cpp: require('./lang/cpp/tokenizer'),
-   csharp: require('./lang/csharp/tokenizer'),
-   css: require('./lang/css/tokenizer'),
-   go: require('./lang/go/tokenizer'),
-   html: require('./lang/html/tokenizer'),
-   java: require('./lang/java/tokenizer'),
-   javascript: require('./lang/javascript/tokenizer'),
-   lua: require('./lang/lua/tokenizer'),
-   'objective-c': require('./lang/objective-c/tokenizer'),
-   perl: require('./lang/perl/tokenizer'),
-   python: require('./lang/python/tokenizer'),
-   ruby: require('./lang/ruby/tokenizer'),
-   shell: require('./lang/shell/tokenizer'),
-   sql: require('./lang/sql/tokenizer'),
-   swift: require('./lang/swift/tokenizer'),
-   typescript: require('./lang/typescript/tokenizer'),
-   xml: require('./lang/xml/tokenizer'),
-};
-Object.keys(tokenizer_set).forEach((lang) => {
-   tokenizer_set[lang] = i_monarch.Tokenizer(lang, tokenizer_set);
-});
 
 const ext_map = {
    bat: ['.bat'],
@@ -131,23 +106,10 @@ function get_lang_by_filename(filename) {
    return ext_reversed_map(extname) || null;
 }
 
-function tokenize (text, lang) {
-   let tokens = null;
-   if (tokenizer_set[lang]) {
-      tokens = tokenizer_set[lang](text);
-      tokens = translate_moarch_tokens(text, tokens);
-   } else {
-      tokens = tokenize_basic(text, true);
-      tokens = translate_basic_tokens(text, tokens);
-   }
-   return tokens;
-}
-
 const api = {
    language: {
       by_filename: get_lang_by_filename
    },
-   tokenize,
    tokenize_basic,
    tokenize_camelcase,
 };
