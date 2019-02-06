@@ -5,6 +5,7 @@ const i_utils = require('./utils');
 const i_env = require('./env');
 
 const i_metasearch = require('./backbone/metasearch/generic').api;
+const i_acl = require('./backbone/acl').api;
 
 const api = {
    internal: {
@@ -103,6 +104,7 @@ const api = {
       }
    }, // auth
    metasearch: i_metasearch,
+   acl: i_acl,
 };
 
 if (!i_env.debug && !i_env.auth_internal) {

@@ -1,5 +1,6 @@
 const i_keyval = require('../../keyval');
 const i_utils = require('../../utils');
+const i_acl = require('../acl').internal_api;
 const i_common = require('./common');
 const i_metasearch = {
    opengrok_1_x: require('./opengrok_1_x'),
@@ -167,8 +168,11 @@ const api = {
          let path = options.json.path;
 
          if (!project || !path) return i_utils.Web.e400(res);
+         let acl_user = i_acl.get_user_acl(options.json.username);
+         if (acl_user.exclude && acl_user.exclude.indexOf(project) >= 0) {
+            return i_utils.Web.e401(res);
+         }
          let host = get_host_by_project_name(project);
-         // TODO: acl host, project, username
          if (!host) return i_utils.Web.e404(res);
          host.client.xref_dir({
             path: `/${project}${path}`
@@ -185,8 +189,11 @@ const api = {
          let path = options.json.path;
 
          if (!project || !path) return i_utils.Web.e400(res);
+         let acl_user = i_acl.get_user_acl(options.json.username);
+         if (acl_user.exclude && acl_user.exclude.indexOf(project) >= 0) {
+            return i_utils.Web.e401(res);
+         }
          let host = get_host_by_project_name(project);
-         // TODO: acl host, project, username
          if (!host) return i_utils.Web.e404(res);
          host.client.xref_file({
             path: `/${project}${path}`
@@ -211,8 +218,11 @@ function websocket_send(ws, json) {
 
 const websocket = {
    acl_filter: (registry, username) => {
-      // TODO: filter by username
-      var projects = registry.projects;
+      let exclude = i_acl.get_user_acl(username).exclude;
+      if (!exclude || !exclude.length) return registry.projects;
+      let projects = registry.projects.filter(
+         (project) => exclude.indexOf(project) < 0
+      );
       return projects;
    },
    generate_tasks: (username, query_map) => new Promise((r, e) => {
