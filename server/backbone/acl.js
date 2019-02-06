@@ -69,7 +69,7 @@ const acl = {
          i_keyval.set(acl_pkey, acl_project);
       }
       let index;
-      let pending_update_users;
+      let pending_update_users = [];
       if (acl_project.exclude) {
          index = acl_project.exclude.indexOf(username);
          if (index >= 0) {
