@@ -97,7 +97,7 @@ define(["require", "exports"], function (require, exports) {
       });
       SuggestAdapter.prototype.provideCompletionItems = function (model, position, _context) {
          var wordInfo = model.getWordUntilPosition(position);
-         var offset = this._positionToOffset(resource, position);
+         var offset = this._positionToOffset(model.uri, position);
          return this._worker(model.uri).then(function (worker) {
             return worker.getCompletionsAtPosition(model.uri.toString(), offset);
          }).then(function (info) {
