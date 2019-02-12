@@ -2,6 +2,7 @@ const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
 const i_common = require('./common');
+const i_utils = require('../../utils');
 
 function remove_b_and_replace_br(text) {
    text = text.replace(new RegExp('<b\s*/?>', 'g'), '');
@@ -114,6 +115,7 @@ const mode = {
             url: `${client.base.url}/search?${form}`,
          };
          if (options.cookie) request_options.jar = options.cookie;
+         if (options.headers) request_options.headers = options.headers;
          i_req(request_options, (err, res, body) => {
             if (err) {
                return e(err);
@@ -272,6 +274,7 @@ const mode = {
       }, // get_items
    },
    noauth: {
+      check_authed: (client) => mode.noauth.login(client),
       login: (client) => new Promise((r, e) => {
          i_req.get(client.base.url, (err, res, body) => {
             if (err) {
@@ -284,7 +287,65 @@ const mode = {
       browse_path: (client, options) => mode.common.browse(client, options),
       browse_file: (client, options) => mode.common.browse(client, options),
    },
+   basic: {
+      check_authed: (client) => new Promise((r, e) => {
+         i_req.get({
+            url: client.base.url,
+            headers: client.headers,
+            followAllRedirects: true
+         }, (err, res, body) => {
+            if (err) {
+               return r(new OpenGrokResult(client, null));
+            }
+            r(new OpenGrokResult(client, body));
+         });
+      }),
+      login: (client, username, password) => new Promise((r, e) => {
+         client.headers = {
+            'authorization': (
+               'Basic ' +
+               i_utils.Codec.base64.encode(`${username} ${password}`)
+            )
+         }
+         i_req.get({
+            url: client.base.url,
+            headers: client.headers,
+            followAllRedirects: true
+         }, (err, res, body) => {
+            if (err) {
+               return e(err);
+            }
+            r({ contents: body });
+         });
+      }),
+      search: (client, options) => {
+         options.headers = client.headers;
+         return mode.common.search(client, options)
+      },
+      browse_path: (client, options) => {
+         options.headers = client.headers;
+         return mode.common.browse(client, options)
+      },
+      browse_file: (client, options) => {
+         options.headers = client.headers;
+         return mode.common.browse(client, options);
+      },
+   },
    jsecurity: {
+      check_authed: (client) => {
+         return new Promise((r, e) => {
+            i_req.get({
+               url: client.base.url,
+               jar: client.cookie,
+            }, (err, res, body) => {
+               // TODO: check err
+               if (err) {
+                  return e(err);
+               }
+               r(new OpenGrokResult(client, body));
+            });
+         });
+      },
       login: (client, username, password) => new Promise((r, e) => {
          i_req.post({
             url: `${client.base.url}/j_security_check`,
@@ -376,18 +437,7 @@ class OpenGrokClient {
    }
 
    check_authed() {
-      return new Promise((r, e) => {
-         i_req.get({
-            url: this.base.url,
-            jar: this.cookie,
-         }, (err, res, body) => {
-            // TODO: check err
-            if (err) {
-               return e(err);
-            }
-            r(new OpenGrokResult(this, body));
-         });
-      });
+      return this.mode_api.check_authed(this);
    }
 
    login(username, password) {
