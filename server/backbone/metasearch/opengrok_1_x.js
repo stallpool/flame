@@ -280,7 +280,7 @@ const mode = {
             if (err) {
                return e(err);
             }
-            r({ contents: body });
+            r(new OpenGrokResult(client, body));
          });
       }),
       search: (client, options) => mode.common.search(client, options),
@@ -315,7 +315,7 @@ const mode = {
             if (err) {
                return e(err);
             }
-            r({ contents: body });
+            r(new OpenGrokResult(client, body));
          });
       }),
       search: (client, options) => {
