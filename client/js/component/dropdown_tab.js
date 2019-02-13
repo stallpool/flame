@@ -36,9 +36,25 @@
       tab_div.appendChild(tab_body);
       return {
          self: tab_div,
+         body: tab_body,
          header: tab_header,
          content: tab_content
       };
+   }
+
+   function ensure_events(dropdown_tab) {
+      if (!dropdown_tab.state.pinned.mouseleave) {
+         dropdown_tab.dom.self.addEventListener(
+            'mouseleave', dropdown_tab.events.on_mouseleave
+         );
+         dropdown_tab.state.pinned.mouseleave = true;
+      }
+      if (!dropdown_tab.state.pinned.mouseenter) {
+         dropdown_tab.dom.self.addEventListener(
+            'mouseenter', dropdown_tab.events.on_mouseenter
+         );
+         dropdown_tab.state.pinned.mouseenter = true;
+      }
    }
 
    function FlameDropdownTab(dom, options) {
@@ -48,9 +64,11 @@
          pinned: {
             current: null,
             mouseenter: false,
-            mouseleave: false,
+            mouseleave: false
          }
       };
+      this.hide();
+      document.body.appendChild(this.dom.self);
 
       var _this = this;
       this.events = {
@@ -78,29 +96,35 @@
       pin: function () {
          if (this.state.pinned.current === true) return;
          this.state.pinned.current = true;
-         if (!this.state.pinned.mouseleave) {
-            this.dom.self.addEventListener('mouseleave', this.events.on_mouseleave);
-            this.state.pinned.mouseleave = true;
-         }
-         if (!this.state.pinned.mouseenter) {
-            this.dom.self.addEventListener('mouseenter', this.events.on_mouseenter);
-            this.state.pinned.mouseenter = true;
-         }
+         ensure_events(this);
       },
       unpin: function () {
          if (this.state.pinned.current === false) return;
          this.state.pinned.current = false;
-         if (!this.state.pinned.mouseleave) {
-            this.dom.self.addEventListener('mouseleave', this.events.on_mouseleave);
-            this.state.pinned.mouseleave = true;
-         }
-         if (!this.state.pinned.mouseenter) {
-            this.dom.self.addEventListener('mouseenter', this.events.on_mouseenter);
-            this.state.pinned.mouseenter = true;
-         }
+         ensure_events(this);
       },
       is_pinned: function () {
          return !!this.state.pinned.current;
+      },
+      show: function () {
+         this.dom.self.style.display = 'block';
+      },
+      hide: function () {
+         this.dom.self.style.display = 'none';
+      },
+      set_opacity: function (x) {
+         this.dom.self.style.opacity = x;
+      },
+      layout: function () {
+         if (!this.dom) return;
+         this.dom.self.style.top = (this.ref_dom.offsetTop + config.top_correction) + 'px';
+         this.dom.self.style.left = (this.ref_dom.offsetLeft + config.left_correction) + 'px';
+         var width = window.innerWidth / 2;
+         if (width > 800) width = 800; else if (width < 300) width = 300;
+         var height = window.innerHeight - this.ref_dom.offsetTop - this.ref_dom.offsetHeight - 10;
+         this.dom.body.style.width = width + 'px';
+         this.dom.body.style.height = height + 'px';
+         this.dom.header.style.width = (this.ref_dom.offsetWidth + config.width_correction) + 'px';
       }
    };
 

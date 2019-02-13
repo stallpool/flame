@@ -141,6 +141,12 @@
          }
          this.set_language(lang, lang);
       },
+      show: function () {
+         this.self.style.display = 'block';
+      },
+      hide: function () {
+         this.self.style.display = 'none';
+      }
    };
 
    window.FlameEditor = FlameEditor;

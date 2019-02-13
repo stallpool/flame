@@ -76,10 +76,10 @@ function goto_app_loaded() {
 
 function search_redirect(query) {
    if (!query) {
-      window.location = '/explore.html';
+      window.location = '/view.html';
       return;
    }
-   window.location = '/search.html?q=' + escape(query);
+   window.location = '/view.html##' + encodeURIComponent(query);
 }
 
 var env = {};

@@ -15,9 +15,9 @@
       this.crumbs = [];
       this.path = options.path;
       this.bind(options.on_click);
+      this.on_click = null;
    }
    FlameBreadCrumb.prototype = {
-      on_click: null,
       layout: function (path) {
          if (path) this.path = path;
          if (!this.path) return false;
@@ -70,6 +70,14 @@
             fn && fn(ev.target.parentNode, _this.crumbs, index);
          };
          this.dom.addEventListener('click', this.on_click);
+      },
+      reset: function () {
+         var parent = this.dom;
+         this.crumbs.forEach(function (crumb) {
+            parent.removeChild(crumb.dom);
+            delete crumb.dom;
+         });
+         this.crumbs = [];
       },
       dispose: function () {
          if (this.on_click) {

@@ -3,6 +3,8 @@
 // @include common.js
 // @include client.js
 // @include component/breadcrumb.js
+// @include component/dropdown_tab.js
+// @include component/search_list.js
 // @include monaco-editor/dev/vs/loader.js
 // @include monaco-editor/flame/editor.js
 
@@ -10,6 +12,9 @@ var env = {};
 var ui = {
    loading: dom('#p_loading'),
    app: dom('#p_app'),
+   nav: {
+      search: dom('#nav_mline')
+   },
    btn: {
       search: dom('#btn_search')
    },
@@ -26,8 +31,13 @@ var ui = {
          ).join('/') + '/';
          window.location.hash = new_hash;
       }
-   })
+   }),
+   search_tab: null,
+   search_list: null,
 };
+ui.search_tab = new FlameDropdownTab(ui.nav.search);
+ui.search_tab.unpin();
+ui.search_list = new FlameSearchList(ui.search_tab.dom.content);
 
 require.config({ paths: {
    'vs': './js/monaco-editor/dev/vs',
@@ -233,10 +243,18 @@ function register_events() {
          return on_search(ui.txt.search.value);
       }
    });
+   ui.txt.search.addEventListener('focus', function (evt) {
+      ui.txt.search.selectionStart = 0;
+      ui.txt.search.selectionEnd = ui.txt.search.value.length;
+   });
+   ui.nav.search.addEventListener('mouseenter', function (evt) {
+      ui.search_tab.layout();
+      ui.search_tab.show();
+   });
 }
 function on_search(query) {
    if (!query) return;
-   window.location = 'search.html?q=' + encodeURIComponent(query);
+   window.location = '##' + encodeURIComponent(query);
 }
 
 function on_window_resize() {
@@ -250,6 +268,7 @@ function on_window_resize() {
 
 function reset_for_hashchange() {
    window.addEventListener('hashchange', function () {
+      ui.breadcrumb.reset();
       if (ui.editor.api) {
          ui.editor.api.getModel().dispose();
          ui.editor.api.dispose();
@@ -280,8 +299,30 @@ function error_file_not_found() {
    ui.loading.querySelector('#loading_text').innerHTML = '<strong>File Not Found!</storng>';
 }
 
+function do_search() {
+   var hash = window.location.hash;
+   hash = hash.substring(2);
+   hash = decodeURIComponent(hash);
+   if (!hash) return error_file_not_found();
+   ui_loaded();
+   ui.search_tab.pin();
+   if (!ui.search_list.events.on_search_start) {
+      ui.search_list.events.on_search_start = function () {
+         ui.search_tab.layout();
+         ui.search_tab.set_opacity(1);
+         ui.search_tab.show();
+      };
+   }
+   ui.search_list.start_search(hash);
+}
+
 function load_code() {
-   var hash = window.location.hash.substring(1).split('/');
+   var hash = window.location.hash;
+   if (hash && hash.startsWith('##')) {
+      return do_search();
+   }
+   ui.search_tab.unpin();
+   hash = hash.substring(1).split('/');
    hash = {
       project: hash[1],
       path: '/' + hash.slice(2).join('/')
