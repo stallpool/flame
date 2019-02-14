@@ -5,13 +5,8 @@
    <meta charset='utf-8'> 
    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
    <link rel="stylesheet" href="css/clr-ui.min.css">
+   <link rel="stylesheet" href="css/common.css">
    <style>
-   .header-icon {
-      width: 32px;
-      height: 32px;
-      margin-top: 12px;
-      margin-right: 5px;
-   }
    .searchbox {
       box-sizing: border-box;
       margin-left: 15%;
@@ -25,7 +20,7 @@
 <body>
    <header class="header header-5">
       <div class="branding">
-         <img class="header-icon" src="icon.svg" />&nbsp;
+         <img class="header-icon" src="icon.png" />&nbsp;
          <span class="title">Flame</span>
       </div>
       <div class="header-nav">
@@ -33,8 +28,8 @@
       </div>
    </header>
    <div id="p_loading">
-      <div style="width:100%;height:100%;position:fixed;top:0;left:0;background:white;opacity:0.3;z-index:9000;"></div>
-      <div class="text-center" style="z-index:9001">
+      <div class="loading-mask"></div>
+      <div class="text-center" class="loading-info">
          <span class="spinner spinner-inline"></span> Loading ...
       </div>
    </div>
