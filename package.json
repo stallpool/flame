@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dna2mirror/flame.git"
+    "url": "git+https://github.com/stallpool/flame.git"
   },
   "keywords": [
     "repository",
@@ -20,9 +20,9 @@
   "author": "Seven Lju",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dna2mirror/flame/issues"
+    "url": "https://github.com/stallpool/flame/issues"
   },
-  "homepage": "https://github.com/dna2mirror/flame#readme",
+  "homepage": "https://github.com/stallpool/flame#readme",
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
     "elasticsearch": "^15.3.0",
