@@ -26,4 +26,3 @@ Sub Licenses
 
 Microsoft Monaco Editor: https://github.com/Microsoft/monaco-editor/blob/master/LICENSE.md
 VMware Clarity: https://github.com/vmware/clarity/blob/master/LICENSE
-FortAwesome Font Awesome: https://github.com/FortAwesome/Font-Awesome/blob/master/LICENSE.txt

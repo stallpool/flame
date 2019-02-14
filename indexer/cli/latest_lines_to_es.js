@@ -160,7 +160,9 @@ function main(argv) {
          '.cmd', '.xml', '.json', '.sql'
       ].indexOf(extname) < 0) {
          let filename_lower = filename.toLowerCase();
-         if (!['/readme', '/license'].filter((x) => filename_lower.endsWith(x)).length) {
+         if (!['/readme', '/license', '/makefile'].filter(
+            (x) => filename_lower.endsWith(x)
+         ).length) {
             return false;
          }
       }

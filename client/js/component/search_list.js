@@ -7,7 +7,6 @@
       desc_max_len: 200
    };
 
-
    var split_stops = /[\s`~!@#$%^&*()-_=+[\]{}\\|:;"'<,>./?]+/;
    function search_token_map(token_map, tokens) {
       tokens.forEach(function (token) {
@@ -176,12 +175,13 @@
 
    /////////////////////////////////////////////////////////////////////////////
 
-   function build_list(base_dom) {
+   function build_list() {
       var list = document.createElement('div');
       list.classList.add('tab-container');
       var header = document.createElement('div');
       header.classList.add('tab-row');
       var info = document.createElement('div');
+      info.innerHTML = generate_alert_html('No search.');
       header.appendChild(info);
       var body = document.createElement('div');
       body.classList.add('tab-row-fit');
