@@ -96,6 +96,47 @@ define(["require", "exports"], function (require, exports) {
       return null;
    }
 
+   var stops = /[`~!@#$%^&*()\-+=|\\[\]{}:;"'<>,./?\n\t ]/;
+   function get_term(model, offset, info) {
+      var position = model.positionAt(offset);
+      var line = model.getLineContent(position.lineNumber);
+      var base_index = position.column, start_index = base_index, end_index = base_index;
+      for(var i = start_index-1; i >= 0; i --) {
+         var ch = line.charAt(i);
+         if (stops.test(ch)) {
+            start_index = i+1;
+            break;
+         }
+         if (i === 0) {
+            start_index = 0;
+         }
+      }
+      for(var i = start_index, n = line.length; i < n; i ++) {
+         var ch = line.charAt(i);
+         if (stops.test(ch)) {
+            end_index = i;
+            break;
+         }
+         if (i === n) {
+            end_index = n;
+         }
+      }
+      var term = line.substring(start_index, end_index);
+      if (!term) return null;
+      var query = '';
+      if (info && info.project) query = 'project:' + info.project + ' ';
+      query += term;
+      query = encodeURIComponent(query);
+      var description = 'search for [' + term + '](##' + query + ') ...';
+      // startIndex, endIndex, description
+      var item = {
+         startOffset: offset - (base_index - start_index),
+         endOffset: offset + (end_index - base_index),
+         description: description
+      };
+      return item;
+   }
+
    var lang_service_api = {
       createLanguageService: function (worker) {
          return {
@@ -125,6 +166,7 @@ define(["require", "exports"], function (require, exports) {
                var info = worker.getInformation();
                if (!info) return null;
                var token = lookup_token(info.tokens, offset);
+               if (!token) token = get_term(model, offset, info);
                if (!token) return null;
                return {
                   documentation: [],

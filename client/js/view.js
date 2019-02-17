@@ -251,6 +251,12 @@ function register_events() {
       ui.search_tab.layout();
       ui.search_tab.show();
    });
+
+   document.body.addEventListener('click', function (evt) {
+      var href = evt.target.getAttribute('data-href');
+      if (!href) return;
+      window.location.hash = href;
+   });
 }
 function on_search(query) {
    if (!query) return;
@@ -343,7 +349,7 @@ function load_code() {
          ui.editor.create(
             result.path,
             result.text,
-            result.info || {},
+            add_more_info(result.info || {}),
             { readOnly: true }
          );
          ui.editor.on_content_ready(function () {
@@ -383,7 +389,7 @@ function load_code() {
          ui.editor.create(
             result.path + '.__dir__',
             directory_info.text,
-            directory_info.info,
+            add_more_info(directory_info.info),
             { readOnly: true }
          );
          ui.editor.on_content_ready(function () {
@@ -401,6 +407,12 @@ function load_code() {
       }, function () {
          error_file_not_found();
       })
+   }
+
+   function add_more_info(info) {
+      if (!info) return;
+      info.project = hash.project;
+      return info;
    }
 }
 
