@@ -138,7 +138,7 @@ define(["require", "exports"], function (require, exports) {
       // startIndex, endIndex, description
       var item = {
          startOffset: offset - (base_index - start_index) + 1,
-         endOffset: offset + (end_index - base_index),
+         endOffset: offset + (end_index - base_index) + 1,
          description: description
       };
       return item;

@@ -227,13 +227,15 @@ function before_login() {
 }
 
 function init_app() {
-   reset_for_hashchange();
-   on_window_resize();
    register_events();
    load_code();
 }
 
 function register_events() {
+   reset_for_hashchange();
+   on_window_resize();
+   on_hover_on_line_number();
+
    ui.btn.search.addEventListener('click', function (evt) {
       if (evt.target.tagName.toLowerCase() !== 'label') return;
       on_search(ui.txt.search.value);
@@ -297,6 +299,46 @@ function reset_for_hashchange() {
          load_code();
       }
    });
+}
+
+function on_hover_on_line_number() {
+   var container = dom('#editor_container');
+   var line_number = 1;
+   var last_target = null;
+   container.addEventListener('mousemove', function (evt) {
+      var target = evt.target;
+      if (target.parentNode.classList.contains('margin-view-overlays')) {
+      } else if (target.parentNode.parentNode.classList.contains('margin-view-overlays')) {
+      } else {
+         target = null;
+      }
+      if (!target) {
+         if (last_target) {
+            mouse_leave(evt, line_number);
+            line_number = 1;
+            last_target = null;
+         }
+         return;
+      }
+      if (target === last_target) return;
+      if (last_target) mouse_leave(evt, line_number);
+      line_number = parseInt(target.textContent);
+      last_target = target;
+      mouse_enter(evt, line_number);
+   });
+   container.addEventListener('mouseleave', function (evt) {
+      if (!last_target) return;
+      mouse_leave(evt, line_number);
+      line_number = 1;
+      last_target = null;
+   });
+
+   function mouse_enter(evt, line_number) {
+      // console.log('enter', line_number);
+   }
+   function mouse_leave(evt, line_number) {
+      // console.log('leave', line_number);
+   }
 }
 
 function error_file_not_found() {
