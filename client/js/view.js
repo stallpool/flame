@@ -386,6 +386,7 @@ function load_code() {
          ui.app.classList.remove('hide');
          ui.editor.resize();
          var directory_info = generate_directory_info(result);
+         directory_info.info.is_dir = true;
          ui.editor.create(
             result.path + '.__dir__',
             directory_info.text,

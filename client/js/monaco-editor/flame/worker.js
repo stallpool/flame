@@ -96,14 +96,20 @@ define(["require", "exports"], function (require, exports) {
       return null;
    }
 
-   var stops = /[`~!@#$%^&*()\-+=|\\[\]{}:;"'<>,./?\n\t ]/;
+   var regex = {
+      stops: /[`~!@#$%^&*()\-+=|\\[\]{}:;"'<>,./?\n\t ]/,
+      number: /\d+/
+   };
    function get_term(model, offset, info) {
+      if (!model) return null;
+      if (!info || !info.project) return null;
+      if (info.is_dir) return null;
       var position = model.positionAt(offset);
       var line = model.getLineContent(position.lineNumber);
       var base_index = position.column, start_index = base_index, end_index = base_index;
       for(var i = start_index-1; i >= 0; i --) {
          var ch = line.charAt(i);
-         if (stops.test(ch)) {
+         if (regex.stops.test(ch)) {
             start_index = i+1;
             break;
          }
@@ -113,7 +119,7 @@ define(["require", "exports"], function (require, exports) {
       }
       for(var i = start_index, n = line.length; i < n; i ++) {
          var ch = line.charAt(i);
-         if (stops.test(ch)) {
+         if (regex.stops.test(ch)) {
             end_index = i;
             break;
          }
@@ -123,6 +129,7 @@ define(["require", "exports"], function (require, exports) {
       }
       var term = line.substring(start_index, end_index);
       if (!term) return null;
+      if (regex.number.test(term)) return null;
       var query = '';
       if (info && info.project) query = 'project:' + info.project + ' ';
       query += term;
@@ -130,7 +137,7 @@ define(["require", "exports"], function (require, exports) {
       var description = 'search for [' + term + '](##' + query + ') ...';
       // startIndex, endIndex, description
       var item = {
-         startOffset: offset - (base_index - start_index),
+         startOffset: offset - (base_index - start_index) + 1,
          endOffset: offset + (end_index - base_index),
          description: description
       };
