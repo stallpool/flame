@@ -1,6 +1,6 @@
 'use strict';
 
-var vqofenv = {
+var flame_env = {
    hostname: window.location.hostname
 };
 
@@ -57,7 +57,7 @@ function get_cookie() {
 }
 
 function set_cookie(key, value) {
-   document.cookie = key + '=' + escape(value) + ';domain=' + vqofenv.hostname;
+   document.cookie = key + '=' + escape(value) + ';domain=' + flame_env.hostname;
 }
 
 function erase_cookie(key) {
@@ -97,8 +97,8 @@ function login_and_start(env, before_init, init_app, redirect_url) {
    before_init && before_init();
    var cookie = get_cookie();
    env.user = {
-      username: cookie.vqof_username,
-      uuid: cookie.vqof_uuid
+      username: cookie.flame_username,
+      uuid: cookie.flame_uuid
    };
    if (!env.user.username || !env.user.uuid) {
       window.location = redirect_url;

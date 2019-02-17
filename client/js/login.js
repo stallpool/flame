@@ -14,8 +14,8 @@ var ui = {
 
 (function init(){
    var cookie = get_cookie();
-   if (cookie.vqof_username) {
-      ui.login.username.value = cookie.vqof_username;
+   if (cookie.flame_username) {
+      ui.login.username.value = cookie.flame_username;
       ui.login.password.focus();
    } else {
       ui.login.username.focus();
@@ -59,8 +59,8 @@ function login() {
       }
    }, function (response) {
       response = JSON.parse(response);
-      set_cookie('vqof_username', username);
-      set_cookie('vqof_uuid', response.uuid);
+      set_cookie('flame_username', username);
+      set_cookie('flame_uuid', response.uuid);
       window.location = get_redirect_path();
    }, function (status) {
       ui.login.error.classList.remove('hide');
