@@ -123,7 +123,7 @@ define(["require", "exports"], function (require, exports) {
             end_index = i;
             break;
          }
-         if (i === n) {
+         if (i === n-1) {
             end_index = n;
          }
       }
