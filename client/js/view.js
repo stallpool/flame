@@ -257,7 +257,9 @@ function register_events() {
    document.body.addEventListener('click', function (evt) {
       var href = evt.target.getAttribute('data-href');
       if (!href) return;
-      window.location.hash = href;
+      goto_token_uol({
+         uol: href
+      });
    });
 }
 function on_search(query) {
@@ -420,7 +422,7 @@ function goto_token_uol(token) {
       window.location.hash = token.uol;
       return;
    }
-   window.location = token.uol;
+   window.open(token.uol, '_blank');
 }
 
 function error_file_not_found() {
