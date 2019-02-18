@@ -20,6 +20,29 @@ node server/index.js
 - `FLAME_ADMINS`: comma-separated list of admins
 - `FLAME_LDAP_SERVER`: ldap server for user authentication
 - `FLAME_KEYVAL_FILENAME`: backup in-memory key-value database into a file
+- `FLAME_METADATA_BASE`: where source file metadata are stored
+
+##### `FLAME_METADATA_BASE` Example
+
+Say we have a file of `/project/path/to/file` and `FLAME_METADATA_BASE` is set to `/data`;
+
+Then metadata module will try to read `/data/project/path/to/file/_` as source code `info`:
+
+```
+{
+   "tokens": [
+      {"startOffset":8, "endOffset":17, "description": "import trollop", "uol": "https://github.com/karlwilbur/trollop"},
+      {"startOffset":1444, "endOffset":1459, "description": "class XException < StandardError", "uol": "#/nimbus/lib/nimbusException.rb?lineno=7"},
+      {"startOffset":10841, "endOffset":10861, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
+      {"startOffset":94351, "endOffset":94371, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
+      {"startOffset":94977, "endOffset":94997, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
+      {"startOffset":95669, "endOffset":95689, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
+      {"startOffset":95955, "endOffset":95975, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"}
+   ]
+}
+```
+
+The first token refers to external URL; the second refers to another file; meanwhile, the others refer to infile token.
 
 
 ### Configuration

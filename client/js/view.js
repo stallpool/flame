@@ -394,7 +394,7 @@ function goto_editor_offset(offset, n) {
    if (!(offset >= 0)) return;
    if (!ui.editor.api) return;
    var model = ui.editor.api.getModel();
-   var position = model.getPostionAt(offset);
+   var position = model.getPositionAt(offset);
    goto_editor_position(position.lineNumber, position.column, n);
 }
 

@@ -201,6 +201,7 @@ const api = {
             // TODO: check if result is binary or text
             i_utils.Web.rjson(res, {
                project, path,
+               info: i_common.metadata.load(`/${project}${path}`),
                text: result.text
             });
          });

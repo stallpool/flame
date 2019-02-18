@@ -1,3 +1,5 @@
+const i_metadata = require('./metadata');
+
 function extract_query_keyval (text) {
    if (!text) return null;
    if (text.indexOf(':') < 0) return null;
@@ -10,6 +12,7 @@ function extract_query_keyval (text) {
 }
 
 const api = {
+   metadata: new i_metadata.MetaData(),
    query: {
       parse: (query) => {
          // semantic query, e.g.
