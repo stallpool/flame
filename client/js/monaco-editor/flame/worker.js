@@ -98,7 +98,7 @@ define(["require", "exports"], function (require, exports) {
 
    var regex = {
       stops: /[`~!@#$%^&*()\-+=|\\[\]{}:;"'<>,./?\n\t ]/,
-      number: /\d+/
+      number: /^\d+/
    };
    function get_term(model, offset, info) {
       if (!model) return null;
