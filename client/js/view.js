@@ -228,7 +228,7 @@ function before_login() {
 
 function init_app() {
    register_events();
-   load_code();
+   load_contents();
 }
 
 function register_events() {
@@ -296,7 +296,7 @@ function reset_for_hashchange() {
 
       function reload() {
          ui_loading();
-         load_code();
+         load_contents();
       }
    });
 }
@@ -307,8 +307,14 @@ function on_hover_on_line_number() {
    var last_target = null;
    container.addEventListener('mousemove', function (evt) {
       var target = evt.target;
-      if (target.parentNode.classList.contains('margin-view-overlays')) {
-      } else if (target.parentNode.parentNode.classList.contains('margin-view-overlays')) {
+      if (
+         target.parentNode &&
+         target.parentNode.classList.contains('margin-view-overlays')
+      ) {
+      } else if (
+         target.parentNode.parentNode &&
+         target.parentNode.parentNode.classList.contains('margin-view-overlays')
+      ) {
       } else {
          target = null;
       }
@@ -364,7 +370,86 @@ function do_search() {
    ui.search_list.start_search(hash);
 }
 
-function load_code() {
+function load_to_add_more_info(output, info) {
+   if (!output || !info) return;
+   output.project = info.project;
+   return output;
+}
+
+function load_for_file(options) {
+   client.browse.get_file(
+      env, options.project, options.path
+   ).then(function (result) {
+      if (!result) return error_file_not_found();
+      ui.app.classList.remove('hide');
+      ui.editor.resize();
+      ui.editor.create(
+         result.path,
+         result.text,
+         load_to_add_more_info(result.info || {}, options),
+         { readOnly: true }
+      );
+      ui.editor.on_content_ready(function () {
+         ui_loaded();
+         if (options.flags && options.flags.lineno) {
+            var lineno = parseInt(options.flags.lineno);
+            ui.editor.api.revealLineInCenter(lineno || 0);
+            ui.editor.api.setPosition({
+               lineNumber: lineno,
+               column: 0
+            });
+         }
+         ui.editor.on_definition_click(function (evt) {
+            var model = ui.editor.api.getModel();
+            var offset = model.getOffsetAt(evt.target.position);
+            var information = monaco.languages.FlameLanguage.Information.get();
+            var token = util_lookup_token(information.tokens, offset);
+            if (!token) {
+               // infile cross reference jump
+               ui.editor._backup.on_definition_click(evt);
+               return;
+            }
+            window.location.hash = '#' + token.hash;
+         });
+      });
+   }, function () {
+      error_file_not_found();
+   });
+}
+
+function load_for_directory(options) {
+   client.browse.get_dir(
+      env, options.project, options.path
+   ).then(function (result) {
+      if (!result) return error_file_not_found();
+      ui.app.classList.remove('hide');
+      ui.editor.resize();
+      var directory_info = generate_directory_info(result);
+      directory_info.info.is_dir = true;
+      ui.editor.create(
+         result.path + '.__dir__',
+         directory_info.text,
+         load_to_add_more_info(directory_info.info, options),
+         { readOnly: true }
+      );
+      ui.editor.on_content_ready(function () {
+         ui.editor.define_directory_lang();
+         ui.editor.on_definition_click(function (evt) {
+            var model = ui.editor.api.getModel();
+            var offset = model.getOffsetAt(evt.target.position);
+            var information = monaco.languages.FlameLanguage.Information.get();
+            var token = util_lookup_token(information.tokens, offset);
+            if (!token) return;
+            window.location.hash = '#' + token.hash;
+         });
+         ui_loaded();
+      });
+   }, function () {
+      error_file_not_found();
+   })
+}
+
+function load_contents() {
    var hash = window.location.hash;
    if (hash && hash.startsWith('##')) {
       return do_search();
@@ -379,83 +464,12 @@ function load_code() {
    var isdir = hash.path.charAt(hash.path.length-1) === '/';
    var hash_path = util_parse_path(hash.path);
    hash.path = hash_path.path;
-   hash.search = hash_path.map;
+   hash.flags = hash_path.map;
    ui.breadcrumb.layout(util_hash_path(hash));
-   if (!isdir) {
-      client.browse.get_file(
-         env, hash.project, hash.path
-      ).then(function (result) {
-         if (!result) return error_file_not_found();
-         ui.app.classList.remove('hide');
-         ui.editor.resize();
-         ui.editor.create(
-            result.path,
-            result.text,
-            add_more_info(result.info || {}),
-            { readOnly: true }
-         );
-         ui.editor.on_content_ready(function () {
-            ui_loaded();
-            if (hash.search && hash.search.lineno) {
-               var lineno = parseInt(hash.search.lineno);
-               ui.editor.api.revealLineInCenter(lineno || 0);
-               ui.editor.api.setPosition({
-                  lineNumber: lineno,
-                  column: 0
-               });
-            }
-            ui.editor.on_definition_click(function (evt) {
-               var model = ui.editor.api.getModel();
-               var offset = model.getOffsetAt(evt.target.position);
-               var information = monaco.languages.FlameLanguage.Information.get();
-               var token = util_lookup_token(information.tokens, offset);
-               if (!token) {
-                  // infile cross reference jump
-                  ui.editor._backup.on_definition_click(evt);
-                  return;
-               }
-               window.location.hash = '#' + token.hash;
-            });
-         });
-      }, function () {
-         error_file_not_found();
-      });
+   if (isdir) {
+      load_for_directory(hash);
    } else {
-      client.browse.get_dir(
-         env, hash.project, hash.path
-      ).then(function (result) {
-         if (!result) return error_file_not_found();
-         ui.app.classList.remove('hide');
-         ui.editor.resize();
-         var directory_info = generate_directory_info(result);
-         directory_info.info.is_dir = true;
-         ui.editor.create(
-            result.path + '.__dir__',
-            directory_info.text,
-            add_more_info(directory_info.info),
-            { readOnly: true }
-         );
-         ui.editor.on_content_ready(function () {
-            ui.editor.define_directory_lang();
-            ui.editor.on_definition_click(function (evt) {
-               var model = ui.editor.api.getModel();
-               var offset = model.getOffsetAt(evt.target.position);
-               var information = monaco.languages.FlameLanguage.Information.get();
-               var token = util_lookup_token(information.tokens, offset);
-               if (!token) return;
-               window.location.hash = '#' + token.hash;
-            });
-            ui_loaded();
-         });
-      }, function () {
-         error_file_not_found();
-      })
-   }
-
-   function add_more_info(info) {
-      if (!info) return;
-      info.project = hash.project;
-      return info;
+      load_for_file(hash);
    }
 }
 
