@@ -32,7 +32,7 @@ Then metadata module will try to read `/data/project/path/to/file/_` as source c
 {
    "tokens": [
       {"startOffset":8, "endOffset":17, "description": "import trollop", "uol": "https://github.com/karlwilbur/trollop"},
-      {"startOffset":1444, "endOffset":1459, "description": "class XException < StandardError", "uol": "#/nimbus/lib/nimbusException.rb?lineno=7"},
+      {"startOffset":1444, "endOffset":1459, "description": "class XException < StandardError", "uol": "#/path/to/XException.rb?lineno=7"},
       {"startOffset":10841, "endOffset":10861, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
       {"startOffset":94351, "endOffset":94371, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
       {"startOffset":94977, "endOffset":94997, "description": "class PartialFail < XException", "uol": "?offset=1421&n=20"},
@@ -47,7 +47,7 @@ The first token refers to external URL; the second refers to another file; meanw
 
 ### Configuration
 
-> open browser, login to http://127.0.0.1:20180 and get cookie string of `flame_username` and `flame_uuid`
+> open browser, login to http://127.0.0.1:20180 and get cookie string of `flame_username` and `flame_uuid` <br/>
 > notice: `flame_username` should in `FLAME_ADMINS`
 
 ##### OpenGrok

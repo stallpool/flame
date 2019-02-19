@@ -96,6 +96,43 @@ define(["require", "exports"], function (require, exports) {
       return null;
    }
 
+   function util_parse_path(path) {
+      var search = path;
+      var parsed = {};
+      if (!search) return parsed;
+      search = search.split('?');
+      parsed.path = search[0];
+      search = search[1];
+      if (!search) return parsed;
+      search = search.split('&');
+      if (!search.length) return parsed;
+      var map = {};
+      parsed.map = map;
+      search.forEach(function (one) {
+         var index = one.indexOf('=');
+         var key, value;
+         if (index < 0) {
+            key = one;
+            value = '';
+         } else {
+            key = one.substring(0, index);
+            value = one.substring(index+1);
+         }
+         key = decodeURIComponent(key);
+         value = decodeURIComponent(value);
+         if (key in map) {
+            if (map[key].length) {
+               map[key].push(value);
+            } else {
+               map[key] = [map[key], value];
+            }
+         } else {
+            map[key] = value;
+         }
+      });
+      return parsed;
+   }   
+
    var regex = {
       stops: /[`~!@#$%^&*()\-+=|\\[\]{}:;"'<>,./?\n\t ]/,
       number: /^\d+/
@@ -186,15 +223,31 @@ define(["require", "exports"], function (require, exports) {
                };
             }, // quick info
             getDefinitionAtPosition: function (model, offset) {
-               return null;
-   
+               var info = worker.getInformation();
+               if (!info) return null;
+               var token = lookup_token(info.tokens, offset);
+               if (!token) token = get_term(model, offset, info);
+               if (!token) return null;
+               if (!token.uol || !token.uol.startsWith('?')) return null;
+               var map = util_parse_path(token.uol).map;
+               var textSpan = { start: 0, length: 0 };
+               if (map.x && map.y && map.n) {
+                  map.offset = model.offsetAt({
+                     lineNumber: parseInt(map.x),
+                     column: parseInt(map.y)
+                  });
+               } else if (map.offset && map.n) {
+                  map.offset = parseInt(map.offset);
+               } else {
+                  return null;
+               }
+               map.n = parseInt(map.n);
+console.log('hello');
                return [{
-                  containterName: 'debug',
-                  kind: 'constructor',
-                  name: '__constructor',
+                  name: 'xxx',
                   textSpan: {
-                     start: 0,
-                     length: token.text.length
+                     start: map.offset,
+                     length: map.n
                   }
                }];
             } // definition
