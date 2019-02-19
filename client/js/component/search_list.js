@@ -106,7 +106,6 @@
       on_message: function (evt) {
          var _this = this;
          var data = JSON.parse(evt.data);
-         var query = this.queries[this.index];
          if (data.result) {
             this.status[data.count] = true;
             var base_url = '#';
@@ -176,8 +175,11 @@
             skip = !!this.options.skip_query(this);
          }
          if (skip) {
+            if (this.options.on_complete_per_task) {
+               this.options.on_complete_per_task(this, []);
+            }
             if (this.options.on_complete_per_query) {
-               this.options.on_complete_per_query(this, []);
+               this.options.on_complete_per_query(this);
             }
             this.one(queries, index + 1);
             return;
@@ -256,7 +258,7 @@
    }
 
    function do_search_for_text(text, options, search_list) {
-      var queries = text.split('\n');
+      var queries = text.split('\n').map(function (x) { return '| ' + x; });
       var search_result = {};
       new Searcher({
          on_complete_per_task: function (searcher, update_items) {
@@ -264,7 +266,7 @@
                search_list.dom.body.removeChild(search_result.dom);
                search_list.items.pop();
             }
-            var query = searcher.queries[searcher.index];
+            var query = searcher.queries[searcher.index].substring(2);
             search_result.name = query;
             search_result.type = 'metasearch_source';
             search_result.matches = [];
@@ -294,7 +296,7 @@
          on_start_per_query: function (searcher) {
          },
          skip_query: function (searcher) {
-            var query = searcher.queries[searcher.index];
+            var query = searcher.queries[searcher.index].substring(2);
             var match = (split_stops.exec(query) || [])[0];
             if (match === query) {
                return true;
@@ -383,6 +385,12 @@
          a.href = '#' + (match.name || item.name) + '?lineno=' + match.lineno;
          a.appendChild(document.createTextNode(match.text));
          td.appendChild(a);
+         if (match.name) {
+            var span = document.createElement('span');
+            span.classList.add('match-line-filename');
+            span.appendChild(document.createTextNode(' (' + match.name + ')'));
+            td.appendChild(span);
+         }
          tr.appendChild(td);
          tbody.appendChild(tr);
       });

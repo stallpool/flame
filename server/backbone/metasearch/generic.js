@@ -338,16 +338,27 @@ const websocket = {
          uuid, ws, status: { val: 'pending' }, count: 0
       };
       let query_map = i_common.query.parse(options.query);
+      if (!query_map || !query_map.query) {
+         config.status.val = 'complete';
+         websocket_send(config.ws, {
+            uuid: config.uuid,
+            result: null,
+            count: 0,
+         });
+         return r();
+      }
       websocket.task_config[uuid] = config;
       websocket.generate_tasks(options.username, query_map).then((tasks) => {
          if (tasks.length) {
             websocket_send(config.ws, {
+               uuid: config.uuid,
                result: null,
                count: tasks.length,
             });
          } else {
             config.status.val = 'complete';
             websocket_send(config.ws, {
+               uuid: config.uuid,
                result: null,
                count: 0,
             });
