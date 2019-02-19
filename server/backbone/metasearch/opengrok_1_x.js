@@ -2,6 +2,7 @@ const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
 const i_common = require('./common');
+const i_text = require('../text');
 const i_utils = require('../../utils');
 
 function remove_b_and_replace_br(text) {
@@ -76,6 +77,11 @@ function set_mode_by_body(client, text, expected_mode) {
    return result;
 }
 
+function normalize_query(text) {
+   text = i_text.tokenizer.basic(text).join(' ');
+   return text;
+}
+
 
 const mode = {
    common: {
@@ -99,11 +105,11 @@ const mode = {
          let form = {};
          if (Array.isArray(options.project)) options.project = options.project.join(',');
          form.project = options.project;
-         if (options.fullsearch) form.q = options.fullsearch;
-         if (options.definition) form.defs = options.definition;
-         if (options.symbol) form.refs = options.symbol;
-         if (options.filepath) form.path = options.filepath;
-         if (options.history) form.hist = options.history;
+         if (options.fullsearch) form.q = normalize_query(options.fullsearch);
+         if (options.definition) form.defs = normalize_query(options.definition);
+         if (options.symbol) form.refs = normalize_query(options.symbol);
+         if (options.filepath) form.path = normalize_query(options.filepath);
+         if (options.history) form.hist = normalize_query(options.history);
          if (options.offset) form.start = options.offset;
          if (options.size) form.n = options.size;
          form.sort = options.orderby || 'relevancy';
