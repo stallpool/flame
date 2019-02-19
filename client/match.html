@@ -29,28 +29,32 @@
    </header>
    <div id="p_loading">
       <div class="loading-mask"></div>
-      <div class="text-center" class="loading-info">
+      <div id="loading_text" class="loading-info">
          <span class="spinner spinner-inline"></span> Loading ...
       </div>
    </div>
-   <div id="p_app" class="hide">
+   <div id="p_app" class="main-container">
       <div class="subnav">
          <ul class="nav">
-            <li class="nav-item"><a id="nav_mline" class="nav-link active">Line</a></li>
-            <li class="nav-item"><a id="nav_mmult" class="nav-link">Multiple</a></li>
+            <li class="nav-item"><a id="nav_mline" class="nav-link">Line</a></li>
+            <li class="nav-item"><a id="nav_mmult" class="nav-link active">Multiple</a></li>
             <li class="nav-item disabled"><a id="nav_madvn" class="nav-link">Advanced</a></li>
          </ul>
       </div>
-      <div id="p_mline" class="content-container">
-         <div class="content-area form-block">
-            <div class="form-group text-center">
-               <input class="clr-input searchbox" id="txt_search_line" />
-               <div><button class="btn btn-md btn-primary" id="search_line">Search</button></div>
+      <div class="content-container" style="display:block;">
+         <div class="content-area">
+            <div id="pnl_search" class="form-group text-center">
+               <textarea id="txt_search" class="searchbox" rows="8"></textarea>
+               <div><button id="btn_search" class="btn btn-md btn-primary">Search</button></div>
             </div>
+            <div id="pnl_result"></div>
          </div>
       </div>
    </div>
-   <script src="js/common.js"></script>
-   <script src="js/index.js"></script>
+   <script type="text/javascript" src="./js/common.js"></script>
+   <script type="text/javascript" src="./js/component/breadcrumb.js"></script>
+   <script type="text/javascript" src="./js/component/dropdown_tab.js"></script>
+   <script type="text/javascript" src="./js/component/search_list.js"></script>
+   <script type="text/javascript" src="./js/match.js"></script>
 </body>
 </html>

@@ -17,6 +17,10 @@
       return lang.id;
    }
 
+   // TODO: deep customize hover widget
+   // contribution: editor.contrib.hover
+   //       action: editor.action.showHover
+   // registerEditorContribution, registerEditorAction
    function FlameEditor (dom) {
       this.self = dom;
       this.api = null;

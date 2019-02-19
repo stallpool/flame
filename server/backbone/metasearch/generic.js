@@ -364,9 +364,9 @@ const websocket = {
       }, e); // filter
    }),
    cancel: (uuid) => new Promise((r, e) => {
-      let config = websocket.config[uuid];
+      let config = websocket.task_config[uuid];
       if (!config) return e(uuid);
-      delete websocket.config[uuid];
+      delete websocket.task_config[uuid];
       websocket.task_queue = websocket.task_queue.filter(
          (task) => task.uuid !== uuid
       );
