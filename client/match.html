@@ -7,14 +7,47 @@
    <link rel="stylesheet" href="css/clr-ui.min.css">
    <link rel="stylesheet" href="css/common.css">
    <style>
-   .searchbox {
-      box-sizing: border-box;
-      margin-left: 15%;
-      margin-right: 15%;
-      margin-top: 10%;
-      padding-left: 8px;
-      width: 70%;
-   }
+      .searchbox {
+         box-sizing: border-box;
+         margin-left: 15%;
+         margin-right: 15%;
+         margin-top: 10%;
+         padding-left: 8px;
+         width: 70%;
+      }
+      .item-icon {
+         width: 20px;
+         height: 20px;
+         margin-right: 5px;
+         vertical-align: top;
+      }
+      .item-url {
+         cursor: pointer;
+         display: inline-block;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         text-decoration: none;
+         font-weight: 400;
+         font-size: 0.66rem;
+      }
+      .item-url:hover {
+         text-decoration: underline;
+      }
+      .item-url:visited {
+         text-decoration: none;
+      }
+      .item-url span {
+         color: green;
+         font-size: 0.6rem;
+      }
+      .lineno {
+         border-left: 2px solid #ccc;
+         background-color: #eee;
+         padding-right: 5px;
+      }
+      .match-line-filename {
+         color: green;
+      }
    </style>
 </head>
 <body>
@@ -47,7 +80,10 @@
                <textarea id="txt_search" class="searchbox" rows="8"></textarea>
                <div><button id="btn_search" class="btn btn-md btn-primary">Search</button></div>
             </div>
-            <div id="pnl_result"></div>
+            <div id="pnl_result" class="hide">
+               <div><a id="btn_back" class="btn btn-sm btn-default">Back</a></div>
+               <div id="search_result"></div>
+            </div>
          </div>
       </div>
    </div>

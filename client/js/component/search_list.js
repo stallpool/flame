@@ -137,12 +137,13 @@
          var data = JSON.parse(evt.data);
          if (data.result) {
             this.status[data.count] = true;
-            var base_url = '#';
+            var base_url = this.options.base_url || '#';
             var config = data.result.config;
             var update_items = [];
             data.result.items.forEach(function (item) {
                item.files.forEach(function (file) {
                   var obj = {
+                     base_url: base_url,
                      type: 'metasearch_source',
                      name: item.path + file.name,
                      uol: base_url + item.path + file.name,
@@ -289,7 +290,7 @@
    function do_search_for_text(text, options, search_list) {
       var queries = text.split('\n').map(function (x) { return '| ' + x; });
       var search_result = {};
-      new Searcher({
+      new Searcher(Object.assign({
          on_complete_per_task: function (searcher, update_items) {
             if (search_result.dom) {
                search_list.dom.body.removeChild(search_result.dom);
@@ -303,6 +304,7 @@
             var query_seq = query.split(split_stops);
             update_items.forEach(function (x) {
                var matches = x.item.matches;
+               search_result.base_url = x.item.base_url;
                matches.forEach(function (match) {
                   match.score = match_line_score(match, query, query_seq);
                   match.name = x.item.name;
@@ -349,7 +351,7 @@
                search_list.dom.info.innerHTML = generate_alert_html('Nothing found.');
             }
          }
-      }).start(queries);
+      }, options)).start(queries);
    }
 
    /////////////////////////////////////////////////////////////////////////////
@@ -409,7 +411,13 @@
          tr.appendChild(td);
          td = document.createElement('td');
          a = document.createElement('a');
-         a.href = '#' + (match.name || item.name) + '?lineno=' + match.lineno;
+         var href = item.base_url || '#';
+         href += match.name || item.name;
+         href += '?lineno=' + match.lineno;
+         if (href && !href.startsWith('#')) {
+            a.target = '_blank';
+         }
+         a.href = href;
          a.appendChild(document.createTextNode(match.text));
          td.appendChild(a);
          if (match.name) {

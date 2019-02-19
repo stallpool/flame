@@ -14,15 +14,18 @@ var ui = {
          advn: dom('#nav_madvn')
       },
       btn: {
-         search: {
-            line: dom('#btn_search')
-         }
+         search: dom('#btn_search'),
+         back: dom('#btn_back')
       },
       txt: {
          search: dom('#txt_search')
+      },
+      panel: {
+         search: dom('#pnl_search'),
+         result: dom('#pnl_result')
       }
    },
-   search_list: new window.FlameSearchList(dom('#pnl_result'))
+   search_list: new window.FlameSearchList(dom('#search_result'))
 };
 
 function ui_loading() {
@@ -42,6 +45,24 @@ function before_login() {
 function register_events() {
    ui.app.nav.line.addEventListener('click', function () {
       window.open('index.html', '_self');
+   });
+
+   ui.app.btn.back.addEventListener('click', function () {
+      ui.app.panel.result.classList.add('hide');
+      ui.app.panel.search.classList.remove('hide');
+   });
+
+   ui.app.btn.search.addEventListener('click', function () {
+      if (!ui.app.txt.search.value) {
+         ui.app.txt.search.focus();
+         return;
+      }
+      ui.search_list.start_multiple_search(
+         ui.app.txt.search.value,
+         { base_url: 'view.html#' }
+      );
+      ui.app.panel.search.classList.add('hide');
+      ui.app.panel.result.classList.remove('hide');
    });
 }
 
