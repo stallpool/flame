@@ -57,6 +57,7 @@ function register_events() {
          ui.app.txt.search.focus();
          return;
       }
+      ui.search_list.reset();
       ui.search_list.start_multiple_search(
          ui.app.txt.search.value,
          { base_url: 'view.html#' }

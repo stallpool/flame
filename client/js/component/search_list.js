@@ -7,7 +7,7 @@
       desc_max_len: 200
    };
 
-   var split_stops = /[\s`~!@#$%^&*()-_=+[\]{}\\|:;"'<,>./?]+/;
+   var split_stops = /[\s`~!@#$%^&*()\-_=+[\]{}\\|:;"'<,>./?]+/;
    function search_token_map(token_map, tokens) {
       tokens.forEach(function (token) {
          if (!token) return;
@@ -287,16 +287,28 @@
       }).start([query]);
    }
 
+   var regex_number = /^([\d_]+)$/;
+   function transform_query(query) {
+      var origin = query;
+      query = query.split(split_stops);
+      query = query.map(function (x) {
+         if (!x.trim()) return null;
+         if (regex_number.test(x)) return null;
+         return x;
+      }).filter(function (x) {
+         return !!x;
+      });
+      return {
+         origin: origin,
+         transformed: query.join(' ').trim()
+      }
+   }
+
    function do_search_for_text(text, options, search_list) {
-      var queries = text.split('\n').filter(function (x) {
-         if (!x.trim()) return false;
-         var match = split_stops.exec(x);
-         if (!match) return true;
-         match = match[0];
-         if (match.trim() === x.trim()) return false;
-         return true;
-      }).map(function (x) {
-         return '| ' + x;
+      var queries = text.split('\n').map(function (x) {
+         return transform_query(x);
+      }).filter(function (x) {
+         return !!x.transformed;
       });
       var search_result = {};
       new Searcher(Object.assign({
@@ -305,7 +317,7 @@
                search_list.dom.body.removeChild(search_result.dom);
                search_result = search_list.items.pop();
             }
-            var query = searcher.queries[searcher.index].substring(2);
+            var query = queries[searcher.index].origin;
             search_result.name = query;
             search_result.type = 'metasearch_source';
             search_result.matches = search_result.matches || [];
@@ -360,7 +372,7 @@
                search_list.dom.info.innerHTML = generate_alert_html('Nothing found.');
             }
          }
-      }, options)).start(queries);
+      }, options)).start(queries.map(function (x) { return x.transformed; }));
    }
 
    /////////////////////////////////////////////////////////////////////////////
