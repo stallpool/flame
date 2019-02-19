@@ -264,12 +264,12 @@
          on_complete_per_task: function (searcher, update_items) {
             if (search_result.dom) {
                search_list.dom.body.removeChild(search_result.dom);
-               search_list.items.pop();
+               search_result = search_list.items.pop();
             }
             var query = searcher.queries[searcher.index].substring(2);
             search_result.name = query;
             search_result.type = 'metasearch_source';
-            search_result.matches = [];
+            search_result.matches = search_result.matches || [];
 
             var query_token_map = {};
             search_token_map(query_token_map, query.split(split_stops));
