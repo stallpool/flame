@@ -288,7 +288,16 @@
    }
 
    function do_search_for_text(text, options, search_list) {
-      var queries = text.split('\n').map(function (x) { return '| ' + x; });
+      var queries = text.split('\n').filter(function (x) {
+         if (!x.trim()) return false;
+         var match = split_stops.exec(x);
+         if (!match) return true;
+         match = match[0];
+         if (match.trim() === x.trim()) return false;
+         return true;
+      }).map(function (x) {
+         return '| ' + x;
+      });
       var search_result = {};
       new Searcher(Object.assign({
          on_complete_per_task: function (searcher, update_items) {
