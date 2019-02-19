@@ -31,6 +31,35 @@
       });
    }
 
+   function match_line_score(match, query, query_seq) {
+      if (!query_seq) query_seq = query.split(split_stops);
+      var item_seq = match.text.split(split_stops);
+      if (!item_seq.length || !query_seq.length) return 0.0;
+      // string: cpu: {}, mem: {} GB, disk: {}  GB
+      //    log: cpu: 1 , mem: 4  GB, disk: 100 GB
+      // LCS algorithm
+      // / L(a i-1, b j-1) + 1, if a i = b j
+      // \ max{ L(a i-1, b j), L(a i, b j-1) }, if a i != b j
+      var a0 = [], a1 = [];
+      var n = query_seq.length, m = item_seq.length;
+      for (var i = m; i >= 0; i--) {
+         a0.push(0);
+         a1.push(0);
+      }
+      for (var i = 0; i < n; i++) {
+         for (var j = 0; j < m; j++) {
+            if (query_seq[i] === item_seq[j]) {
+               a1[j+1] = a0[j] + 1;
+            } else {
+               a1[j+1] = Math.max(a1[j], a0[j+1]);
+            }
+         }
+         a0 = a1;
+      }
+      var score = a1[m] / n;
+      return score;
+   }
+
    function search_line_score(match, query, query_token_map) {
       if (!query_token_map) {
          query_token_map = {};
@@ -271,13 +300,11 @@
             search_result.type = 'metasearch_source';
             search_result.matches = search_result.matches || [];
 
-            var query_token_map = {};
-            search_token_map(query_token_map, query.split(split_stops));
-            search_token_map_normalize(query_token_map);
+            var query_seq = query.split(split_stops);
             update_items.forEach(function (x) {
                var matches = x.item.matches;
                matches.forEach(function (match) {
-                  match.score = search_line_score(match, query, query_token_map);
+                  match.score = match_line_score(match, query, query_seq);
                   match.name = x.item.name;
                   search_result.matches.push(match);
                });
