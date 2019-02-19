@@ -209,17 +209,27 @@ define(["require", "exports"], function (require, exports) {
             getQuickInfoAtPosition: function (model, offset) {
                var info = worker.getInformation();
                if (!info) return null;
+               var contents = [];
+               var token0 = get_term(model, offset, info);
                var token = lookup_token(info.tokens, offset);
-               if (!token) token = get_term(model, offset, info);
+               if (token) {
+                  if (token.description) {
+                     contents.push({ value: token.description });
+                  }
+               } else {
+                  token = token0;
+               }
+               if (token0 && token0.description) {
+                  contents.push({ value: token0.description });
+               }
                if (!token) return null;
+               if (!contents.length) return null;
                return {
-                  documentation: [],
-                  tags: null,
                   textSpan: {
                      start: token.startOffset,
                      length: token.endOffset - token.startOffset
                   },
-                  displayParts: [{ text: token.description }]
+                  contents: contents
                };
             }, // quick info
             getDefinitionAtPosition: function (model, offset) {
@@ -228,9 +238,9 @@ define(["require", "exports"], function (require, exports) {
                var token = lookup_token(info.tokens, offset);
                if (!token) token = get_term(model, offset, info);
                if (!token) return null;
+               if (!token.description) return null;
                if (!token.uol || !token.uol.startsWith('?')) return null;
                var map = util_parse_path(token.uol).map;
-               var textSpan = { start: 0, length: 0 };
                if (map.x && map.y && map.n) {
                   map.offset = model.offsetAt({
                      lineNumber: parseInt(map.x),
@@ -242,9 +252,7 @@ define(["require", "exports"], function (require, exports) {
                   return null;
                }
                map.n = parseInt(map.n);
-console.log('hello');
                return [{
-                  name: 'xxx',
                   textSpan: {
                      start: map.offset,
                      length: map.n

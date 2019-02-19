@@ -3,12 +3,6 @@
 // @include monaco-editor/dev/vs/loader.js
 
 (function (window, document) {
-   function FlameEditor (dom) {
-      this.self = dom;
-      this.api = null;
-      this.global = null;
-   }
-
    function guess_lang_from_ext(path) {
       var langs = monaco.languages.getLanguages();
       var ext = path.split('.');
@@ -23,6 +17,12 @@
       return lang.id;
    }
 
+   function FlameEditor (dom) {
+      this.self = dom;
+      this.api = null;
+      this.global = null;
+      this._backup = {};
+   }
    FlameEditor.prototype = {
       create: function (filename, text, information, options) {
          var _this = this;
@@ -51,6 +51,7 @@
       },
       dispose: function () {
          if (!this.api) return;
+         if (this._backup.on_definition_click) this._backup.on_definition_click = null;
          this.api.dispose();
       },
       on_content_ready: function (fn, self) {
@@ -79,7 +80,6 @@
             }
          */
          if (!this.api) return;
-         if (!this._backup) this._backup = {};
          var _this = this;
          var contrib_gotodefinition = this.api.getContribution('editor.contrib.gotodefinitionwithmouse');
          contrib_gotodefinition.toUnhook.forEach(function (x) {

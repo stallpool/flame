@@ -63,13 +63,9 @@ define(["require", "exports", "vs/editor/editor.main"], function (require, expor
          return new Promise(function (resolve_1, reject_1) { require(['flame/mode'], resolve_1, reject_1); });
       }
    
-      [
-         'flameInternalDirectory',
-         'typescript', 'c', 'cpp', 'csharp', 'dockerfile', 'fsharp', 'go',
-         'html', 'css', 'javascript', 'java', 'less', 'lua', 'markdown',
-         'objective-c', 'php', 'powershell', 'python', 'r', 'ruby', 'rust',
-         'scss', 'swift', 'vb', 'clojure', 'shell', 'perl'
-      ].forEach(function (lang) {
+      var lang = monaco.languages.getLanguages().map(function (x) { return x.id; });
+      lang.push('flameInternalDirectory');
+      lang.forEach(function (lang) {
          monaco.languages.onLanguage(lang, function () {
             return getMode().then(function (mode) {
                return mode.setupFlame(

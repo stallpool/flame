@@ -451,6 +451,7 @@ function do_search() {
 function load_to_add_more_info(output, info) {
    if (!output || !info) return;
    output.project = info.project;
+   output.path = info.path;
    return output;
 }
 

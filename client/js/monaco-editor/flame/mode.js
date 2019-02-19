@@ -158,14 +158,10 @@ define(["require", "exports"], function (require, exports) {
             }
             // contents support partial markdown
             // like ``` code ```, ()[link] ...
-            var contents = [
-               { value: displayPartsToString(info.displayParts) }
-            ];
-            var document = info.document;
-            if (document) contents.push({ value: document });
+            if (!info.contents) return null;
             return {
                range: _this._textSpanToRange(model.uri, info.textSpan),
-               contents: contents
+               contents: info.contents
             };
          });
       };
