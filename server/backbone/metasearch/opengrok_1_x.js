@@ -2,7 +2,7 @@ const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
 const i_common = require('./common');
-const i_text = require('../text');
+const i_text = require('../analysis/text');
 const i_utils = require('../../utils');
 
 function remove_b_and_replace_br(text) {

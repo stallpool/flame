@@ -19,3 +19,112 @@
    left: 50%;
    position: fixed;
 }
+.home {
+   color: white;
+}
+.home:hover {
+   color: white;
+   text-decoration: none;
+}
+.home:visited {
+   color: white;
+}
+.nav-link-dropmark:after {
+   content: "";
+   position: absolute;
+   border-left: 6px solid transparent;
+   border-right: 6px solid transparent;
+   border-bottom: 6px solid #007cbb;
+   transform:rotate(-135deg);
+   left: 20px;
+   top: 90px;
+}
+.dropdown-tab {
+   position: absolute;
+   top: 100%;
+   left: 0;
+   margin-top: .083333rem;
+   display: flex;
+   flex-direction: column;
+   background: #fff;
+   padding: .5rem 0;
+   border: 1px solid #ccc;
+   box-shadow: 0 1px 0.125rem rgba(115,115,115,.25);
+   border-radius: .125rem;
+   z-index: 5000;
+}
+.dropdown-tab .dropdown-tab-header {
+   color: #000;
+   background: #fff;
+   border-left: 1px solid #ccc;
+   border-right: 1px solid #ccc;
+   border-top: 1px solid #ccc;
+   border-bottom: 1px solid #fff;
+   margin-bottom: 10px;
+   margin-top: -48px;
+   margin-left: -1px;
+   border-top-left-radius: .125rem;
+   border-top-right-radius: .125rem;
+   padding: 5px 10px 5px 10px;
+}
+.dropdown-tab .dropdown-header {
+   font-size: .5rem;
+   font-weight: 600;
+   letter-spacing: normal;
+   padding: 0 0 0 .5rem;
+   line-height: .75rem;
+   margin: 0;
+   color: #313131;
+}
+.dropdown-tab .dropdown-content {
+   height: 100%;
+   overflow-y: auto;
+   max-width: 100%;
+   width: 100%;
+   padding: 5px .5rem 0 .5rem;
+   overflow: hidden;
+}
+.item-icon {
+   width: 20px;
+   height: 20px;
+   margin-right: 5px;
+   vertical-align: top;
+}
+.item-url {
+   cursor: pointer;
+   display: inline-block;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   text-decoration: none;
+   font-weight: 400;
+   font-size: 0.66rem;
+}
+.item-url:hover {
+   text-decoration: underline;
+}
+.item-url:visited {
+   text-decoration: none;
+}
+.item-url span {
+   color: green;
+   font-size: 0.6rem;
+}
+.tab-container {
+   display: flex;
+   flex-flow: column;
+   height: 100%;
+}
+.tab-row {
+   flex: 0 1 auto;
+}
+.tab-row-fit {
+   flex: 1 1 auto;
+}
+.lineno {
+   border-left: 2px solid #ccc;
+   background-color: #eee;
+   padding-right: 5px;
+}
+.match-line-filename {
+   color: green;
+}

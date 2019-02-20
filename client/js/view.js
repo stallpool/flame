@@ -357,7 +357,7 @@ function on_definition_click(evt) {
    var token = util_lookup_token(information.tokens, offset);
    if (!token) {
       // infile cross reference jump
-      ui.editor._backup.on_definition_click(evt);
+      ui.editor._backup.on_definition_click.call(undefined, evt);
       return;
    }
    goto_token_uol(token);
