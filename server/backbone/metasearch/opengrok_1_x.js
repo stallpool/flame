@@ -506,6 +506,10 @@ class OpenGrokClient {
       });
    }
 
+   get_metadata(path) {
+      return i_common.metadata.load(path);
+   }
+
    get_cookie() {
       return this.cookie;
    }

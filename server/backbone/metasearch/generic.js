@@ -78,12 +78,16 @@ const i_metasearch = {
  *          r(new MetaSearchResult());
  *       });
  *    }
- * 
+ *
  *    generate_tasks(query_map, projects, output_task_list, config) {
  *       return new Promise((r, e) => {
  *          write tasks into output_task_list
  *          r();
  *       });
+ *    }
+ *
+ *    get_metadata(path) {
+ *       return new Promise((r, e) => { r(info); });
  *    }
  * }
  */
@@ -199,12 +203,17 @@ const api = {
             path: `/${project}${path}`
          }).then((result) => {
             // TODO: check if result is binary or text
-            i_utils.Web.rjson(res, {
-               project, path,
-               info: i_common.metadata.load(`/${project}${path}`),
-               text: result.text
-            });
-         });
+            host.client.get_metadata(`/${project}${path}`).then((info) => {
+               i_utils.Web.rjson(res, {
+                  project, path, info,
+                  text: result.text
+               });
+            }, error_fn);
+         }, error_fn);
+
+         function error_fn() {
+            i_utils.Web.exxx(res, 500);
+         }
       },
    },
 };

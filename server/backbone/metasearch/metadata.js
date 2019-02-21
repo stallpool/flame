@@ -1,5 +1,6 @@
 const i_fs = require('fs');
 const i_path = require('path');
+const i_utils = require('../../utils');
 
 const system = {
    cache_capacity: 
@@ -33,13 +34,15 @@ class MetaData {
    }
 
    load(path) {
-      if (!this.cache) return null;
-      let filename = i_path.join(system.base_dir, path, '_');
-      let item = this.cache.load(filename);
-      if (item) {
-         item = JSON.parse(item);
-      }
-      return item;
+      return new Promise((r) => {
+         if (!this.cache) return r(null);
+         let filename = i_path.join(system.base_dir, path);
+         let item = this.cache.load(filename);
+         if (item) {
+            item = JSON.parse(item);
+         }
+         return r(item);
+      });
    }
 }
 

@@ -378,7 +378,11 @@ const Web = {
    e405: (res, text) => {
       res.writeHead(405, text || 'Not Allowed');
       res.end();
-   }
+   },
+   exxx: (res, code, text) => {
+      res.writeHead(code, text);
+      res.end();
+   },
 };
 
 const Functools = {

@@ -222,6 +222,10 @@ class ElasticSearchClient {
       });
    }
 
+   get_metadata(path) {
+      return i_common.metadata.load(path);
+   }
+
 }
 
 module.exports = {
