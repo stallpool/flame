@@ -144,6 +144,7 @@ const mode = {
             followAllRedirects: true
          };
          if (options.cookie) request_options.jar = options.cookie;
+         if (options.headers) request_options.headers = options.headers;
          i_req(request_options, (err, res, body) => {
             if (err) return e(err);
             r(body);

@@ -158,7 +158,9 @@ function util_limit_path(path, length) {
 
 function generate_directory_info(dir_item) {
    if (!dir_item.items || !dir_item.items.length) {
-      return 'Empty Directory';
+      return {
+         text: 'Empty Directory'
+      };
    }
    var base = util_hash_path(dir_item);
    var head = Object.keys(dir_item.items[0]);
