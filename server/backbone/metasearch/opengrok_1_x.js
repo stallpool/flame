@@ -51,6 +51,12 @@ function process_check_authed_for_jsecurity(client, contents) {
    return true;
 }
 
+function process_check_authed_for_basic(client, contents) {
+   if (contents.indexOf('HTTP Status 401 – Unauthorized') < 0) return false;
+   client.set_mode('basic');
+   return true;
+}
+
 function process_noauth(client, contents) {
    client.set_mode('noauth');
    client.cache = contents;
@@ -59,6 +65,7 @@ function process_noauth(client, contents) {
 
 function set_mode_by_body(client, text, expected_mode) {
    process_check_authed_for_jsecurity(client, text)
+   || process_check_authed_for_basic(client, text)
    // || process_next(...)
    || process_noauth(client, text); // no auth
    let result = { mode: expected_mode };
@@ -286,7 +293,7 @@ const mode = {
             if (err) {
                return e(err);
             }
-            r(new OpenGrokResult(client, body));
+            r({ contents: body });
          });
       }),
       search: (client, options) => mode.common.search(client, options),
@@ -308,9 +315,9 @@ const mode = {
       }),
       login: (client, username, password) => new Promise((r, e) => {
          client.headers = {
-            'authorization': (
+            'Authorization': (
                'Basic ' +
-               i_utils.Codec.base64.encode(`${username} ${password}`)
+               i_utils.Codec.base64.encode(`${username}:${password}`)
             )
          }
          i_req.get({
@@ -321,7 +328,7 @@ const mode = {
             if (err) {
                return e(err);
             }
-            r(new OpenGrokResult(client, body));
+            r({ contents: body });
          });
       }),
       search: (client, options) => {

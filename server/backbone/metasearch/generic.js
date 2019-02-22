@@ -147,12 +147,15 @@ const api = {
          registry.client.check_authed().then((result) => {
             if (result.ready()) {
                registry.projects = result.extract_projects();
+               res.end('ok');
             } else {
                registry.client.login(auth.username, auth.password).then((result) => {
                   registry.projects = result.extract_projects();
+                  res.end('ok');
+               }, () => {
+                  res.end('err');
                });
             }
-            res.end('ok');
          }, (err) => {
             res.end('err');
          });
