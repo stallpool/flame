@@ -6,6 +6,7 @@ const i_api = require('./api');
 const server = i_utils.WebServer.create({ api: i_api });
 
 i_worker.cronCleanAuthToken();
+i_worker.cronDumpKeyVal();
 i_ws.init(server, '/ws');
 
 const server_port = 20180;

@@ -1,4 +1,5 @@
 const i_keyval = require('./keyval');
+const i_env = require('./env');
 
 const LOGIN_TIMEOUT = 7 * 24 * 3600 * 1000;
 
@@ -13,6 +14,15 @@ function cronCleanAuthToken() {
    }, 3600*1000);
 }
 
+function cronDumpKeyVal() {
+   if (!i_env.keyval.filename) return;
+   i_keyval.load(i_env.keyval.filename);
+   setInterval(() => {
+      i_keyval.save(i_env.keyval.filename)
+   }, 10000);
+}
+
 module.exports = {
-   cronCleanAuthToken
+   cronCleanAuthToken,
+   cronDumpKeyVal
 };

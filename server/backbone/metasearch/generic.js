@@ -167,6 +167,7 @@ const api = {
          if (!i_keyval.get(keyval_key)) i_keyval.set(keyval_key, system);
          // TODO: remove all related project indexes
          delete system.registry[base_url];
+         res.end('ok');
       },
    },
    browse: {
