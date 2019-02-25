@@ -112,6 +112,37 @@ function get_host_by_project_name(project) {
    let host = hosts.filter((x) => x.projects.indexOf(project) >= 0)[0];
    return host;
 }
+function register_client(metatype, base_url, version, security_mode, auth) {
+   return new Promise((r, e) => {
+      if (!i_keyval.get(keyval_key)) i_keyval.set(keyval_key, system);
+      let registry = {
+         metatype,
+         base_url,
+         version,
+         security_mode,
+         auth: auth || {},
+         projects: [],
+         client: create_metasearch_client(
+            metatype, base_url, security_mode, version
+         ),
+      };
+      system.registry[base_url] = registry;
+      registry.client.check_authed().then((result) => {
+         if (result.ready()) {
+            registry.projects = result.extract_projects();
+            r(result.extract_projects());
+         } else {
+            registry.client.login(auth.username, auth.password).then((result) => {
+               registry.projects = result.extract_projects();
+               r(result.extract_projects());
+            }, () => {
+               e();
+            });
+         }
+      }, e);
+   });
+}
+
 const api = {
    admin: {
       list: (req, res, options) => {
@@ -132,33 +163,9 @@ const api = {
          let version = options.json.version;
 
          if (!metatype || !base_url) return i_utils.Web.e400(res);
-         if (!i_keyval.get(keyval_key)) i_keyval.set(keyval_key, system);
-         let registry = {
-            metatype,
-            base_url,
-            security_mode,
-            auth: auth || {},
-            projects: [],
-            client: create_metasearch_client(
-               metatype, base_url, security_mode, version
-            ),
-         };
-         system.registry[base_url] = registry;
-         registry.client.check_authed().then((result) => {
-            if (result.ready()) {
-               registry.projects = result.extract_projects();
-               res.end('ok');
-            } else {
-               registry.client.login(auth.username, auth.password).then((result) => {
-                  registry.projects = result.extract_projects();
-                  res.end('ok');
-               }, () => {
-                  res.end('err');
-               });
-            }
-         }, (err) => {
-            res.end('err');
-         });
+         register_client(metatype, base_url, version, security_mode, auth).then(
+            () => res.end('ok'), () => res.end('err')
+         );
       },
       unregister: (req, res, options) => {
          let base_url = options.json.base_url;
@@ -402,5 +409,7 @@ const websocket = {
 };
 
 module.exports = {
-   api, websocket
+   api, websocket,
+   register_client,
+   name: keyval_key,
 };

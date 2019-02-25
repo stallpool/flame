@@ -288,7 +288,11 @@ const mode = {
       }, // get_items
    },
    noauth: {
-      check_authed: (client) => mode.noauth.login(client),
+      check_authed: (client) => new Promise((r, e) => {
+         mode.noauth.login(client).then((item) => {
+            r(new OpenGrokResult(client, item.contents));
+         }, e);
+      }),
       login: (client) => new Promise((r, e) => {
          i_req.get(client.base.url, (err, res, body) => {
             if (err) {
