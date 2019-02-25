@@ -26,6 +26,7 @@ const KeyVal = {
    },
    load: (filename) => {
       if (!filename) return;
+      if (!i_fs.existsSync(filename)) return;
       Object.assign(in_memory, JSON.parse(i_fs.readFileSync(filename)));
    }
 };
