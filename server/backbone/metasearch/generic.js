@@ -5,6 +5,7 @@ const i_common = require('./common');
 const i_metasearch = {
    opengrok_1_x: require('./opengrok_1_x'),
    elasticsearch_6_x: require('./elasticsearch_6_x'),
+   localfs: require('./localfs'),
 };
 
 /***** follow the interface to define new type of metasearch integration
@@ -104,6 +105,8 @@ function create_metasearch_client(metatype, base_url, security_mode, version) {
          return new i_metasearch.opengrok_1_x.Client(base_url, security_mode, version);
       case 'elasticsearch':
          return new i_metasearch.elasticsearch_6_x.Client(base_url, security_mode, version);
+      case 'localfs':
+         return new i_metasearch.localfs.Client(base_url, security_mode, version);
    }
 }
 function get_host_by_project_name(project) {
