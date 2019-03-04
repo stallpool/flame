@@ -1,0 +1,3 @@
+[submodule "server/lazac"]
+	path = server/lazac
+	url = git://github.com/dna2github/lazac
