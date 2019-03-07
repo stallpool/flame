@@ -300,7 +300,7 @@
       });
       return {
          origin: origin,
-         transformed: query.join(' ').trim()
+         transformed: '| ' + query.join(' ').trim()
       }
    }
 
@@ -346,7 +346,7 @@
          on_start_per_query: function (searcher) {
          },
          skip_query: function (searcher) {
-            var query = searcher.queries[searcher.index].substring(2);
+            var query = searcher.queries[searcher.index];
             var match = (split_stops.exec(query) || [])[0];
             if (match === query) {
                return true;

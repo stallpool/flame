@@ -19,17 +19,12 @@ class MetaDataService {
             if (!result) return r(null);
             try {
                result = JSON.parse(result);
-            } catch(e) {
+            } catch(err) {
                return e(data);
             }
             r(result);
          }, e);
       });
-   }
-
-   getKey(tags) {
-      let key = this.joinKeys(tags);
-      return this._resolveKeyRedirect(key);
    }
 
    _resolveKeyRedirect(key) {
@@ -45,7 +40,7 @@ class MetaDataService {
       });
    }
 
-   resolveKeyRedirect(tags) {
+   getKey(tags) {
       let key = this.joinKeys(tags);
       return this._resolveKeyRedirect(key);
    }
@@ -55,7 +50,7 @@ class MetaDataService {
          let data;
          try {
             data = JSON.stringify(json);
-         } catch(e) {
+         } catch(err) {
             return e(json);
          }
          this.storage.put(key, data).then(r, e);

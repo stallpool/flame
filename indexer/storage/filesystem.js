@@ -12,6 +12,7 @@ class FileSystemStorage extends i_interface.IStorage {
       } else {
          config.base = '/tmp';
       }
+      this.config = config;
    }
 
    transformToFilename(key) {
