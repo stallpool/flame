@@ -6,11 +6,6 @@ const system = {
 
 class MetaData {
    constructor() {
-      if (system.base_dir) {
-         this.cache = new Cache(system.cache_capacity);
-      } else {
-         this.cache = null;
-      }
       this.cache = new i_indexer_keyval.Storage({
          base: system.base_dir
       });

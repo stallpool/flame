@@ -160,7 +160,6 @@ class ProjectScanOperator extends Operator {
          if (!options) options = {};
          if (!options.base) return e(error(options));
          new DirectoryScanOperator(this.config).act(options).then(() => {
-            return Promise.resolve(null);
             return new FileTokenScanOperator(this.config).act(options);
          }, e).then(() => {
             return new TokenXrefOperator(this.config).act(options);
