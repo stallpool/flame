@@ -19,6 +19,7 @@ class MetaData {
          let project_path = '/' + name.slice(2).join('/');
          let key = `${project}\t${project_path}\tinfo`;
          this.cache.get(`${project}\t${project_path}\tinfo`).then((data) => {
+            if (!data) return r(null);
             let json = JSON.parse(data);
             r(json);
          }, () => {

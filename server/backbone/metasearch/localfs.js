@@ -1,5 +1,6 @@
 const i_path = require('path');
 const i_fs = require('fs');
+const i_exec = require('child_process').exec;
 const i_utils = require('../../utils');
 const i_common = require('./common');
 
@@ -31,7 +32,54 @@ class LocalFSResult {
    }
 
    extract_items() {
+      let items = this.json.items;
       let r = { items: [] };
+      if (!items || !items.length) return r;
+      let cache = { filename: null, text: null, lineno: 1 };
+      let paths = {};
+      items.forEach((item) => {
+         let name = i_path.basename(item.path);
+         if (name.startsWith('.')) return;
+         let path = i_path.dirname(item.path);
+         let path_obj = paths[path];
+         if (!path_obj) {
+            path_obj = {};
+            path_obj.path = path;
+            path_obj.files = {};
+            paths[path] = path_obj;
+         }
+         let file_obj = path_obj.files[name];
+         if (!file_obj) {
+            file_obj = {};
+            file_obj.name = name;
+            file_obj.matches = [];
+            path_obj.files[name] = file_obj;
+         }
+         if (cache.filename !== item.path) {
+            cache.filename = item.path;
+            cache.text = i_fs.readFileSync(
+               i_path.join(this.client.base_url, item.path)
+            ).toString().split('\n');
+         }
+         for (let i = 0, n = cache.text.length; i < n; i++) {
+            let line = cache.text[i];
+            let text = item.text;
+            if (text.length > 100) text = text.substring(0, 100);
+            if (line.startsWith(text)) {
+               file_obj.matches.push({
+                  lineno: cache.lineno + i,
+                  text: item.text,
+               });
+               cache.lineno = cache.lineno + i + 1;
+               cache.text = cache.text.slice(i + 1);
+               break;
+            }
+         }
+      });
+      r.items = Object.values(paths);
+      r.items.forEach((item) => {
+         item.files = Object.values(item.files);
+      });
       return r;
    }
 
@@ -72,11 +120,51 @@ class LocalFSClient {
    }
 
    search(options) {
+      let _this = this;
       return new Promise((r, e) => {
          // TODO: search in local file system without index
          //       for example, child_process + `grep`
-         r(new LocalFSResult(this, { items: [] }));
+         if (!options) options = {};
+         let project = options.project;
+         if (!project || !project.length) project = [''];
+         let items = [];
+         grep_one_project(project, items, () => {
+            r(new LocalFSResult(this, { items }));
+         });
       });
+
+      function grep_one_project(project_list, item_list, cb) {
+         if (!project_list.length) {
+            cb && cb(item_list);
+            return;
+         }
+         let project_name = project_list.pop();
+         if (project_name) project_name = `/${project_name}`; else project_name = '';
+         let query = options.fullsearch
+            .replace(/\\/g, '')
+            .replace(/"/g, '')
+            .replace(/[$]/g, '');
+         i_exec(
+            `grep "${query}" "${_this.base_url}${project_name}" -r`,
+            (err, stdout, stderr) => {
+               stdout = stdout.split('\n');
+               stdout.forEach((line) => {
+                  if (!line) return;
+                  let i = line.indexOf(':');
+                  if (i < 0) return;
+                  let filename = line.substring(0, i);
+                  filename = filename.substring(_this.base_url.length);
+                  let text = line.substring(i + 1);
+                  if (text.length > 100) text = text.substring(0, 100) + ' ...';
+                  item_list.push({
+                     path: filename,
+                     text: text,
+                  });
+               });
+               grep_one_project(project_list, item_list, cb);
+            }
+         );
+      }
    }
 
    xref_dir(options) {
