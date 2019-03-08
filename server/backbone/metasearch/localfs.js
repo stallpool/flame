@@ -78,6 +78,7 @@ class LocalFSResult {
       });
       r.items = Object.values(paths);
       r.items.forEach((item) => {
+         item.path += '/';
          item.files = Object.values(item.files);
       });
       return r;
