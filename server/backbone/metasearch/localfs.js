@@ -213,11 +213,12 @@ class LocalFSClient {
    generate_tasks(query_map, projects, output_task_list, config) {
       return new Promise((r, e) => {
          projects = i_common.query.filter_project(query_map, projects);
-         output_task_list.push({
+         // grep for each project
+         projects.forEach((project) => output_task_list.push({
             client: this,
             query: query_map.query,
-            projects,
-         });
+            projects: [project],
+         }));
          r();
       });
    }
