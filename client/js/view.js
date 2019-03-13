@@ -307,7 +307,7 @@ function reset_for_hashchange() {
 
 function on_hover_on_line_number() {
    var container = dom('#editor_container');
-   var line_number = 1;
+   var line_number = 0;
    var last_target = null;
    container.addEventListener('mousemove', function (evt) {
       var target = evt.target;
@@ -333,14 +333,20 @@ function on_hover_on_line_number() {
       }
       if (target === last_target) return;
       if (last_target) mouse_leave(evt, line_number);
-      line_number = parseInt(target.textContent);
+      var n = parseInt(target.textContent);
+      if (!n) {
+         line_number = 0;
+         last_target = null;
+         return;
+      }
+      line_number = n;
       last_target = target;
       mouse_enter(evt, line_number);
    });
    container.addEventListener('mouseleave', function (evt) {
       if (!last_target) return;
       mouse_leave(evt, line_number);
-      line_number = 1;
+      line_number = 0;
       last_target = null;
    });
 
