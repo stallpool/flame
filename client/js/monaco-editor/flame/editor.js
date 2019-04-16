@@ -17,6 +17,30 @@
       return lang.id;
    }
 
+   function FlameTextModelService (editor) {
+      this.editor = editor;
+   }
+   FlameTextModelService.prototype = {
+      createModelReference: function (uri) {
+         var _this = this;
+         var model = {
+            load: function () { return Promise.resolve(model); },
+            dispose: function () {},
+            textEditorModel: _this.getModel()
+         };
+         return Promise.resolve({
+            object: model,
+            dispose: function () {}
+         });
+      },
+      registerTextModelContentProvider: function () {
+         return { dispose: function () {} };
+      },
+      hasTextModelContentProvider: function (schema) {
+         return true;
+      }
+   };
+
    // TODO: deep customize hover widget
    // contribution: editor.contrib.hover
    //       action: editor.action.showHover
