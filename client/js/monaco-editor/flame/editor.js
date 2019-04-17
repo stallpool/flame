@@ -63,7 +63,6 @@
          ], function () {
             var lang =  guess_lang_from_ext(filename);
             var theme = options.theme || options.language || lang;
-            monaco.languages.FlameLanguage.Information.assign(information);
             _this.global = monaco;
             _this.api = monaco.editor.create(_this.self, options);
             _this.set_language(lang, theme);
