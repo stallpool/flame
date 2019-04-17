@@ -22,15 +22,16 @@
    }
    FlameTextModelService.prototype = {
       createModelReference: function (uri) {
-         var _this = this;
-         var model = {
-            load: function () { return Promise.resolve(model); },
-            dispose: function () {},
-            textEditorModel: _this.getModel()
-         };
-         return Promise.resolve({
-            object: model,
-            dispose: function () {}
+         return this.getModel(uri).then(function (model) {
+            var object = {
+               load: function () { return Promise.resolve(object); },
+               dispose: function () {},
+               textEditorModel: model
+            };
+            return Promise.resolve({
+               object: object,
+               dispose: function () {}
+            });
          });
       },
       registerTextModelContentProvider: function () {
@@ -38,6 +39,15 @@
       },
       hasTextModelContentProvider: function (schema) {
          return true;
+      },
+      getModel: function (uri) {
+         return new Promise(function (r) {
+            var model = monaco.editor.getModel(uri);
+            if (!model) {
+               // TODO: monaco.editor.createModel('', 'javascript', uri);
+            }
+            r(model);
+         });
       }
    };
 
@@ -64,7 +74,9 @@
             var lang =  guess_lang_from_ext(filename);
             var theme = options.theme || options.language || lang;
             _this.global = monaco;
-            _this.api = monaco.editor.create(_this.self, options);
+            _this.api = monaco.editor.create(_this.self, options, {
+               textModelService: new FlameTextModelService()
+            });
             _this.set_language(lang, theme);
             _this.api.setValue(text);
          });
@@ -176,6 +188,7 @@
       }
    };
 
+   window.FlameTextModelService = FlameTextModelService;
    window.FlameEditor = FlameEditor;
 })(window, document);
 
