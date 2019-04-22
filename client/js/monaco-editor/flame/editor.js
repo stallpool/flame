@@ -79,7 +79,39 @@
             });
             _this.set_language(lang, theme);
             _this.api.setValue(text);
+
+            patch_minimap_touch(_this.api);
          });
+
+         function patch_minimap_touch(editor) {
+            var minimap = editor._modelData.view.viewParts.filter((x) => x._slider)[0];
+            if (!minimap) return;
+            var vscode_dom = require('vs/base/browser/dom');
+            minimap._sliderTouchStartListener = vscode_dom.addStandardDisposableListener(
+               minimap._slider.domNode, 'touchstart', function(evt) {
+                  evt.preventDefault();
+                  var touch = evt.touches[0];
+                  if (!touch) return;
+                  if (!minimap._lastRenderData) return;
+                  minimap._slider.toggleClassName('active', true);
+                  var initialMousePosition = touch.clientY;
+                  var initialSliderState = minimap._lastRenderData.renderedLayout;
+                  var monitor_move = vscode_dom.addStandardDisposableListener(document.body, 'touchmove', function (e) {
+                     var touch = e.touches[0];
+                     if (!touch) return;
+                     var mouseDelta = touch.clientY - initialMousePosition;
+                     minimap._context.viewLayout.setScrollPositionNow({
+                        scrollTop: initialSliderState.getDesiredScrollTopFromDelta(mouseDelta)
+                     });
+                  });
+                  var monitor_stop = vscode_dom.addStandardDisposableListener(document.body, 'touchend', function (e) {
+                     minimap._slider.toggleClassName('active', false);
+                     monitor_move.dispose();
+                     monitor_stop.dispose();
+                  });
+               }
+            );
+         }
       },
       resize: function () {
          this.self.style.height = Math.floor(
