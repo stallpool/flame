@@ -9,8 +9,8 @@ i_worker.cronCleanAuthToken();
 i_worker.cronDumpKeyVal();
 i_ws.init(server, '/ws');
 
-const server_port = 20180;
-const server_host = '127.0.0.1';
+const server_port = parseInt(process.env.FLAME_PORT || '20180');
+const server_host = process.env.FLAME_HOST || '0.0.0.0';
 
 const instance = server.listen(server_port, server_host, () => {
    console.log(`Flame is listening at ${server_host}:${server_port}`);

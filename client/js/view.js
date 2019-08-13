@@ -67,8 +67,7 @@ function on_window_resize() {
 
 function reset_for_hashchange() {
    window.addEventListener('hashchange', function () {
-      return;
-      ui.breadcrumb.reset();
+      // ui.breadcrumb.reset();
       if (ui.editor.api) {
          ui.editor.api.getModel().dispose();
          ui.editor.api.dispose();
@@ -88,16 +87,35 @@ function error_file_not_found() {
 function load_contents() {
    ui.app.classList.remove('hide');
    ui.editor.resize();
-   ui.editor.create(
-      'test.js',
-      'function main() {}',
-      { },
-      { }
-      // { readOnly: true }
-   );
+
+   ui.editor.on_content_load(function _load (uri) {
+      var project = uri.authority;
+      var path = uri.path;
+      return new Promise(function (r, e) {
+         client.browse.get_file(env, project, path).then(
+            function (res) { r(res.text); },
+            function () { r(null); }
+         );
+      });
+   });
+
+   var hash = window.location.hash;
+   if (hash.startsWith('##')) {
+      // search
+   } else if (hash.startsWith('#/')) {
+      // browse
+      load_contents_for_browse(hash);
+   }
    ui.editor.on_content_ready(function () {
       ui_loaded();
    });
+}
+
+function load_contents_for_browse(hash) {
+   var parts = hash.substring(2).split('/');
+   var project = parts[0];
+   var path = '/' + parts.slice(1).join('/');
+   ui.editor.create('flame://' + project + path, '', { }, { /* readOnly: true */ });
 }
 
 login_and_start(env, before_login, init_app, encode_url_for_login('view.html'));

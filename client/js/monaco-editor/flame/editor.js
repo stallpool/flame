@@ -17,22 +17,12 @@
       return lang.id;
    }
 
-   function FlameTextModelService (editor) {
-      this.editor = editor;
+   function FlameTextModelService (options) {
+      this.options = options;
    }
    FlameTextModelService.prototype = {
       createModelReference: function (uri) {
-         return this.getModel(uri).then(function (model) {
-            var object = {
-               load: function () { return Promise.resolve(object); },
-               dispose: function () {},
-               textEditorModel: model
-            };
-            return Promise.resolve({
-               object: object,
-               dispose: function () {}
-            });
-         });
+         return this.getModel(uri);
       },
       registerTextModelContentProvider: function () {
          return { dispose: function () {} };
@@ -41,10 +31,22 @@
          return true;
       },
       getModel: function (uri) {
+         var _this = this;
          return new Promise(function (r) {
             var model = monaco.editor.getModel(uri);
             if (!model) {
-               // TODO: monaco.editor.createModel('', 'javascript', uri);
+               // e.g. monaco.editor.createModel('', 'javascript', uri);
+               if (_this.options && _this.options.fetchText) {
+                  _this.options.fetchText(uri).then(
+                     function (text) {
+                        r(monaco.editor.createModel(text, '', uri));
+                     },
+                     function () {
+                        r(null);
+                     }
+                  );
+                  return;
+               }
             }
             r(model);
          });
@@ -59,6 +61,7 @@
       this.self = dom;
       this.api = null;
       this.global = null;
+      this.hook = {};
       this._backup = {};
    }
    FlameEditor.prototype = {
@@ -73,14 +76,25 @@
          ], function () {
             var lang =  guess_lang_from_ext(filename);
             var theme = options.theme || options.language || lang;
+            var modelService = new FlameTextModelService({
+               fetchText: function (uri) {
+                  if (_this.hook.on_content_load) return _this.hook.on_content_load(uri);
+                  return Promise.resolve(null);
+               }
+            });
             _this.global = monaco;
             _this.api = monaco.editor.create(_this.self, options, {
-               textModelService: new FlameTextModelService()
+               textModelService: modelService,
+               automaticLayout: true,
             });
-            _this.set_language(lang, theme);
-            _this.api.setValue(text);
-
             patch_minimap_touch(_this.api);
+            modelService.createModelReference(monaco.Uri.parse(filename)).then(function (model) {
+               if (!model) model = monaco.editor.createModel(text, lang, monaco.Uri.parse(filename));
+               _this.api.setModel(model);
+               _this.set_language(lang, theme);
+            }, function () {
+               // TODO: deal with loading fail
+            });
          });
 
          function patch_minimap_touch(editor) {
@@ -114,10 +128,15 @@
          }
       },
       resize: function () {
+         this.self.parentNode.style.height = Math.floor(
+            window.innerHeight -
+            this.self.parentNode.parentNode.parentNode.offsetTop -
+            this.self.parentNode.offsetTop/2
+         ) + 'px';
          this.self.style.height = Math.floor(
             window.innerHeight -
-            this.self.parentNode.parentNode.offsetTop -
-            this.self.offsetTop/2
+            this.self.parentNode.parentNode.parentNode.offsetTop -
+            this.self.parentNode.offsetTop/2
          ) + 'px';
       },
       dispose: function () {
@@ -131,6 +150,9 @@
             return setTimeout(self.on_content_ready, 0, fn, self);
          }
          fn && fn();
+      },
+      on_content_load: function (fn) {
+         this.hook.on_content_load = fn;
       },
       on_definition_click: function (fn) {
          // hack way to take control on definition click (ctrl+click, cmd+click)
