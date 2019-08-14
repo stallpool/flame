@@ -43,6 +43,7 @@
          this.component.view.style.paddingLeft = '10px';
          this.component.view.style.display = 'none';
          var div = document.createElement('div');
+         div.classList.add('treeview-nowrap');
          div.appendChild(this.component.updown);
          div.appendChild(this.component.title);
          this.dom.setAttribute('data-name', name);
@@ -65,6 +66,12 @@
       return new Promise((r, e) => {
          var updown_dom = dom.children[0].children[0];
          var children_panel = dom.children[1];
+         if (children_panel.getAttribute('data-status') === 'complete') {
+            children_panel.style.display = 'block';
+            util_set_text(updown_dom, ' - ');
+            r(children_panel);
+            return;
+         }
          children_panel.setAttribute('data-status', 'loading');
          var path = get_tree_path(root_dom, updown_dom).join('');
          var parts = path.split('/');
@@ -130,9 +137,17 @@
          var project = parts[1];
          var i = 1;
          if (!parts[parts.length - 1]) parts.pop();
-         util_reset(this.dom);
-         var node = new FlameTreeNode(project + '/');
-         this.dom.appendChild(node.dom);
+         var need_new_node = true;
+         for (var j = 0, n = this.dom.children.length; j < n; j++) {
+            if (this.dom.children[j].getAttribute('data-name ') === project + '/') {
+               need_new_node = false;
+               break;
+            }
+         }
+         if (need_new_node) {
+            var node = new FlameTreeNode(project + '/');
+            this.dom.appendChild(node.dom);
+         }
          expand_one(this.dom, this.dom, parts, i);
 
          function expand_one(root, dom, list, i) {
