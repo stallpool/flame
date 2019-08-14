@@ -3,6 +3,7 @@
 // @include common.js
 // @include client.js
 // @include component/breadcrumb.js
+// @include component/treeview.js
 // @include monaco-editor/dev/vs/loader.js
 // @include monaco-editor/flame/editor.js
 
@@ -14,6 +15,10 @@ var ui = {
       search: dom('#nav_mline')
    },
    editor: new FlameEditor(dom('#editor_container')),
+   container: {
+      treeview: dom('#project_tree_view_container')
+   },
+   treeview: new FlameTreeView(dom('#project_tree_view')),
    breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
       on_click: function (elem, crumbs, index) {
          var new_hash = '#/' + crumbs.slice(0, index+1).map(
@@ -57,17 +62,20 @@ function register_events() {
 }
 
 function on_window_resize() {
+   ui.container.treeview.style.height = (window.innerHeight - 150) + 'px';
+
    window.addEventListener('resize', function () {
       if (ui.editor.api) {
          ui.editor.resize();
          ui.editor.api.layout();
       }
+      ui.container.treeview.style.height = (window.innerHeight - 150) + 'px';
    });
 }
 
 function reset_for_hashchange() {
    window.addEventListener('hashchange', function () {
-      // ui.breadcrumb.reset();
+      ui.breadcrumb.reset();
       if (ui.editor.api) {
          ui.editor.api.getModel().dispose();
          ui.editor.api.dispose();
@@ -93,7 +101,7 @@ function load_contents() {
       var path = uri.path;
       return new Promise(function (r, e) {
          client.browse.get_file(env, project, path).then(
-            function (res) { r(res.text); },
+            function (res) { r(res && res.text); },
             function () { r(null); }
          );
       });
@@ -105,6 +113,7 @@ function load_contents() {
    } else if (hash.startsWith('#/')) {
       // browse
       load_contents_for_browse(hash);
+      ui.treeview.expand();
    }
    ui.editor.on_content_ready(function () {
       ui_loaded();

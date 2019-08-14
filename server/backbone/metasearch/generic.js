@@ -217,6 +217,9 @@ const api = {
             path: `/${project}${path}`
          }).then((result) => {
             // TODO: check if result is binary or text
+            if (result.text.indexOf('\0') >= 0) {
+               result.text = '<BinaryFile ...>';
+            }
             host.client.get_metadata(`/${project}${path}`).then((info) => {
                i_utils.Web.rjson(res, {
                   project, path, info,
