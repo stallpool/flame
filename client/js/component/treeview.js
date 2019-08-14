@@ -139,7 +139,7 @@
          if (!parts[parts.length - 1]) parts.pop();
          var need_new_node = true;
          for (var j = 0, n = this.dom.children.length; j < n; j++) {
-            if (this.dom.children[j].getAttribute('data-name ') === project + '/') {
+            if (this.dom.children[j].getAttribute('data-name') === project + '/') {
                need_new_node = false;
                break;
             }
