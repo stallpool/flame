@@ -5,15 +5,6 @@
 // @require env (window.env -> username, uuid)
 
 (function (window, document) {
-   function util_reset(dom) {
-      while(dom.children.length) dom.removeChild(dom.children[0]);
-      dom.innerHTML = '';
-   }
-   function util_set_text(dom, text) {
-      util_reset(dom);
-      dom.appendChild(document.createTextNode(text));
-   }
-
    function FlameTreeNode(name, metadata) {
       this.metadata = metadata;
       this.dom = document.createElement('div');
@@ -32,12 +23,12 @@
             children: []
          };
          var name = options.name || '(unamed)';
-         util_set_text(this.component.title, name);
+         set_text_component(this.component.title, name);
          if (name.endsWith('/')) {
-            util_set_text(this.component.updown, ' + ');
+            set_text_component(this.component.updown, ' + ');
             this.component.title.classList.add('treeview-diritem');
          } else {
-            util_set_text(this.component.updown, '   ');
+            set_text_component(this.component.updown, '   ');
             this.component.title.classList.add('treeview-item');
          }
          this.component.updown.classList.add('treeview-icon');
@@ -69,7 +60,7 @@
          var children_panel = dom.children[1];
          if (children_panel.getAttribute('data-status') === 'complete') {
             children_panel.style.display = 'block';
-            util_set_text(updown_dom, ' - ');
+            set_text_component(updown_dom, ' - ');
             r(children_panel);
             return;
          }
@@ -80,8 +71,9 @@
          var dirpath = '/' + parts.slice(1).join('/');
          client.browse.get_dir(env, project, dirpath).then(function (res) {
             if (fn && !fn()) return r(null);
+            if (!res || !res.items) return r(null);
             children_panel.style.display = 'none';
-            util_reset(children_panel);
+            reset_component(children_panel);
             res.items.forEach(function (item) {
                if (!item.name) return;
                var node = new FlameTreeNode(item.name);
@@ -89,14 +81,14 @@
             });
             children_panel.style.display = 'block';
             children_panel.setAttribute('data-status', 'complete');
-            util_set_text(updown_dom, ' - ');
+            set_text_component(updown_dom, ' - ');
             r(children_panel);
          }, function () {
             if (fn && !fn()) return e();
-            util_set_text(updown_dom, ' + ');
+            set_text_component(updown_dom, ' + ');
             e();
          });
-         util_set_text(updown_dom, ' o ');
+         set_text_component(updown_dom, ' o ');
       });
    }
    function FlameTreeView(dom) {
@@ -120,10 +112,10 @@
             }
             if (children_panel.style.display === 'block') {
                children_panel.style.display = 'none';
-               util_set_text(target, ' + ');
+               set_text_component(target, ' + ');
             } else if (children_panel.getAttribute('data-status') === 'complete') {
                children_panel.style.display = 'block';
-               util_set_text(target, ' - ');
+               set_text_component(target, ' - ');
             } else {
                tree_node_loading(_this.dom, target.parentNode.parentNode);
             }

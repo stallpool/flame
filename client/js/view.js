@@ -21,6 +21,17 @@ var ui = {
       explore: dom('#panel_explore'),
       treeview: dom('#project_tree_view_container')
    },
+   list: {
+      explore: {
+         project_list: dom('#explore_project_list')
+      }
+   },
+   btn: {
+      explore_with_match: dom('#explore_with_match')
+   },
+   txt: {
+      explore_match: dom('#explore_match')
+   },
    treeview: new FlameTreeView(dom('#project_tree_view')),
    breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
       on_click: function (elem, crumbs, index) {
@@ -62,6 +73,19 @@ function init_app() {
 function register_events() {
    reset_for_hashchange();
    on_window_resize();
+
+   ui.btn.explore_with_match.addEventListener('click', function () {
+      var match = ui.txt.explore_match.value || undefined;
+      load_contents_for_explore(match);
+   });
+
+   ui.txt.explore_match.addEventListener('keyup', function (evt) {
+      if (evt.keyCode === 13) {
+         var match = ui.txt.explore_match.value || undefined;
+         ui.txt.explore_match.setSelectionRange(0, match?match.length:0);
+         load_contents_for_explore(match);
+      }
+   });
 }
 
 function on_window_resize() {
@@ -116,18 +140,15 @@ function load_contents() {
    if (hash.startsWith('##')) {
       // search
       ui.container.search.style.display = 'block';
+      ui_loaded();
    } else if (hash === '#/') {
       // explore projects
-      ui.container.explore.style.display = 'block';
+      load_contents_for_explore();
    } else if (hash.startsWith('#/')) {
       // browse
-      ui.container.editor.style.display = 'block';
       load_contents_for_browse(hash);
       ui.treeview.expand();
    }
-   ui.editor.on_content_ready(function () {
-      ui_loaded();
-   });
 }
 
 function load_contents_for_browse(hash) {
@@ -135,6 +156,35 @@ function load_contents_for_browse(hash) {
    var project = parts[0];
    var path = '/' + parts.slice(1).join('/');
    ui.editor.create('flame://' + project + path, '', { }, { /* readOnly: true */ });
+   ui.editor.on_content_ready(function () {
+      ui.container.editor.style.display = 'block';
+      ui_loaded();
+      ui.editor.api.layout();
+   });
+}
+
+function load_contents_for_explore(match) {
+   ui_loading();
+   client.browse.get_project_list(env, { match: match }).then(function (res) {
+      if (!res || !res.items) return;
+      reset_component(ui.list.explore.project_list);
+      res.items.forEach(function (project_name) {
+         var div = document.createElement('div');
+         var a = document.createElement('a');
+         a.href = '#/' + project_name + '/';
+         a.classList.add('btn');
+         a.classList.add('btn-link');
+         set_text_component(a, project_name);
+         div.classList.add('col-lg-3');
+         div.classList.add('col-md-4');
+         div.classList.add('col-sm-6');
+         div.classList.add('col-lg-6');
+         div.appendChild(a);
+         ui.list.explore.project_list.appendChild(div);
+      });
+      ui.container.explore.style.display = 'block';
+      ui_loaded();
+   });
 }
 
 login_and_start(env, before_login, init_app, encode_url_for_login('view.html'));

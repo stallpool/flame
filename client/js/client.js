@@ -35,6 +35,26 @@ var client = {
       }
    }, // search
    browse: {
+      get_project_list: function (env, options) {
+         return new Promise(function (r, e) {
+            if (!options) options = {};
+            var json = {
+               username: env.user.username,
+               uuid: env.user.uuid
+            };
+            if (options.match) json.m = options.match;
+            if (options.query) json.q = options.query;
+            ajax({
+               url: '/api/metasearch/browse/project',
+               method: 'POST',
+               json: json
+            }, function (result) {
+               r(JSON.parse(result));
+            }, function () {
+               r(null);
+            });
+         });
+      }, // get_project_list
       get_file: function (env, project, path) {
          return new Promise(function (r, e) {
             ajax({

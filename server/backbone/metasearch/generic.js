@@ -181,6 +181,41 @@ const api = {
       },
    },
    browse: {
+      project: (req, res, options) => {
+         let match = options.json.m;
+         let filter = options.json.q;
+         let n = parseInt(options.json.n || '20');
+         if (n > 20) n = 20;
+         let project_map = {};
+         Object.values(system.registry).forEach((registry) => {
+            if (!registry || !registry.projects) return;
+            registry.projects.forEach((project) => {
+               project_map[project] = 1;
+            });
+         });
+         let project_list = Object.keys(project_map);
+         if (match) {
+            let m = match.toLowerCase();
+            let bitmap = project_list.map((x) => x.toLowerCase().indexOf(m) >= 0);
+            project_list = project_list.filter((_, i) => bitmap[i]);
+         }
+         if (filter) {
+            // TODO: full text search
+         }
+         if (project_list.length > n) {
+            for (let i = 0, times = ~~(n/2); i < times; i++) {
+               let x = ~~(Math.random() * project_list.length);
+               let y = ~~(Math.random() * project_list.length);
+               let t = project_list[x];
+               project_list[x] = project_list[y];
+               project_list[y] = t;
+            }
+            project_list = project_list.slice(0, n).sort((x, y) => (x<y)?-1:1);
+         }
+         i_utils.Web.rjson(res, {
+            items: project_list
+         });
+      },
       path: (req, res, options) => {
          let project = options.json.project;
          let path = options.json.path;

@@ -92,6 +92,16 @@ function dispose_component(component) {
    component.ui = null;
 }
 
+function reset_component(dom) {
+   while(dom.children.length) dom.removeChild(dom.children[0]);
+   dom.innerHTML = '';
+}
+
+function set_text_component(dom, text) {
+   reset_component(dom);
+   dom.appendChild(document.createTextNode(text));
+}
+
 function get_dom_parent_by_class_name(dom, class_name) {
    while (dom) {
       if (dom.classList.contains(class_name)) return dom;
