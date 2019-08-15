@@ -1,5 +1,6 @@
 'use strict';
 
+// @include common.js
 // @include client.js
 // @require env (window.env -> username, uuid)
 
@@ -130,6 +131,11 @@
       });
    }
    FlameTreeView.prototype = {
+      resize: function () {
+         var container = get_dom_parent_by_class_name(this.dom, 'content-container');
+         var height = Math.floor(window.innerHeight - (container?container.offsetTop:0) - 40);
+         this.dom.parentNode.style.height = height + 'px';
+      },
       expand: function () {
          var hash = window.location.hash;
          var parts = hash.substring(1).split('/');

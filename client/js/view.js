@@ -16,6 +16,9 @@ var ui = {
    },
    editor: new FlameEditor(dom('#editor_container')),
    container: {
+      editor: dom('#panel_editor'),
+      search: dom('#panel_search'),
+      explore: dom('#panel_explore'),
       treeview: dom('#project_tree_view_container')
    },
    treeview: new FlameTreeView(dom('#project_tree_view')),
@@ -62,14 +65,12 @@ function register_events() {
 }
 
 function on_window_resize() {
-   ui.container.treeview.style.height = (window.innerHeight - 150) + 'px';
-
    window.addEventListener('resize', function () {
       if (ui.editor.api) {
          ui.editor.resize();
          ui.editor.api.layout();
       }
-      ui.container.treeview.style.height = (window.innerHeight - 150) + 'px';
+      ui.treeview.resize();
    });
 }
 
@@ -94,6 +95,7 @@ function error_file_not_found() {
 
 function load_contents() {
    ui.app.classList.remove('hide');
+   ui.treeview.resize();
    ui.editor.resize();
 
    ui.editor.on_content_load(function _load (uri) {
@@ -108,10 +110,18 @@ function load_contents() {
    });
 
    var hash = window.location.hash;
+   ui.container.editor.style.display = 'none';
+   ui.container.explore.style.display = 'none';
+   ui.container.search.style.display = 'none';
    if (hash.startsWith('##')) {
       // search
+      ui.container.search.style.display = 'block';
+   } else if (hash === '#/') {
+      // explore projects
+      ui.container.explore.style.display = 'block';
    } else if (hash.startsWith('#/')) {
       // browse
+      ui.container.editor.style.display = 'block';
       load_contents_for_browse(hash);
       ui.treeview.expand();
    }

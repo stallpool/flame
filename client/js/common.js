@@ -92,6 +92,14 @@ function dispose_component(component) {
    component.ui = null;
 }
 
+function get_dom_parent_by_class_name(dom, class_name) {
+   while (dom) {
+      if (dom.classList.contains(class_name)) return dom;
+      dom = dom.parentNode;
+   }
+   return null;
+}
+
 function login_and_start(env, before_init, init_app, redirect_url) {
    if (!redirect_url) redirect_url = '/login.html';
    before_init && before_init();

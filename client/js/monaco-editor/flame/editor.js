@@ -1,5 +1,6 @@
 'use strict';
 
+// @include common.js
 // @include monaco-editor/dev/vs/loader.js
 
 (function (window, document) {
@@ -33,6 +34,10 @@
       getModel: function (uri) {
          var _this = this;
          return new Promise(function (r) {
+            if (!uri || !uri.path || !uri.authority) return r(null);
+            if (uri.path.endsWith('/')) {
+               return r(monaco.editor.createModel('', '', uri));
+            }
             var model = monaco.editor.getModel(uri);
             if (!model) {
                // e.g. monaco.editor.createModel('', 'javascript', uri);
@@ -128,16 +133,10 @@
          }
       },
       resize: function () {
-         this.self.parentNode.style.height = Math.floor(
-            window.innerHeight -
-            this.self.parentNode.parentNode.parentNode.offsetTop -
-            this.self.parentNode.offsetTop/2
-         ) + 'px';
-         this.self.style.height = Math.floor(
-            window.innerHeight -
-            this.self.parentNode.parentNode.parentNode.offsetTop -
-            this.self.parentNode.offsetTop/2
-         ) + 'px';
+         var container = get_dom_parent_by_class_name(this.self, 'content-container');
+         var height = Math.floor(window.innerHeight - (container?container.offsetTop:0) - 40);
+         this.self.parentNode.style.height = height + 'px';
+         this.self.style.height = height + 'px';
       },
       dispose: function () {
          if (!this.api) return;
