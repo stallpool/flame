@@ -136,6 +136,14 @@
          var i = 1;
          if (!parts[parts.length - 1]) parts.pop();
          var need_new_node = true;
+         // fold all items
+         for (var j = 0, n = this.dom.children.length; j < n; j++) {
+            var project_item = this.dom.children[j];
+            if (project_item.children[1].style.display === 'block') {
+               project_item.children[1].style.display = 'none';
+               set_text_component(project_item.children[0].children[0], ' + ');
+            }
+         }
          for (var j = 0, n = this.dom.children.length; j < n; j++) {
             if (this.dom.children[j].getAttribute('data-name') === project + '/') {
                need_new_node = false;
