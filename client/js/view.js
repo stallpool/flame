@@ -82,7 +82,6 @@ function register_events() {
    ui.txt.explore_match.addEventListener('keyup', function (evt) {
       if (evt.keyCode === 13) {
          var match = ui.txt.explore_match.value || undefined;
-         ui.txt.explore_match.setSelectionRange(0, match?match.length:0);
          load_contents_for_explore(match);
       }
    });
@@ -184,6 +183,9 @@ function load_contents_for_explore(match) {
       });
       ui.container.explore.style.display = 'block';
       ui_loaded();
+      ui.txt.explore_match.focus();
+      ui.txt.explore_match.selectionStart = 0;
+      ui.txt.explore_match.selectionEnd = match?match.length:0;
    });
 }
 
