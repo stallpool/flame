@@ -12,14 +12,15 @@ var ui = {
    loading: dom('#p_loading'),
    app: dom('#p_app'),
    nav: {
-      search: dom('#nav_mline')
+      menu: dom('#btn_menu')
    },
    editor: new FlameEditor(dom('#editor_container')),
    container: {
       editor: dom('#panel_editor'),
       search: dom('#panel_search'),
       explore: dom('#panel_explore'),
-      treeview: dom('#project_tree_view_container')
+      treeview: dom('#project_tree_view_container'),
+      menu: dom('#panel_menu')
    },
    list: {
       explore: {
@@ -85,6 +86,21 @@ function register_events() {
          load_contents_for_explore(match);
       }
    });
+
+   document.body.addEventListener('click', function (evt) {
+      var target = evt.target;
+      if (target.classList.contains('nav-menu')) {
+         if (ui.container.menu.style.display === 'block') {
+            ui.container.menu.style.display = 'none';
+            return;
+         }
+         ui.container.menu.style.display = 'block';
+         ui.container.menu.style.left = '20px';
+         ui.container.menu.style.top = (target.offsetTop + target.offsetHeight - 25) + 'px';
+      } else {
+         ui.container.menu.style.display = 'none';
+      }
+   });
 }
 
 function on_window_resize() {
@@ -116,6 +132,15 @@ function error_file_not_found() {
    ui.loading.querySelector('#loading_text').innerHTML = '<strong>File Not Found!</storng>';
 }
 
+function util_parse_hash() {
+   var hash = window.location.hash;
+   var parts = hash.split('#');
+   var hash_obj = {};
+   hash_obj.hash = '#' + parts[1];
+   hash_obj.todo = parts.slice(2).join('#');
+   return hash_obj;
+}
+
 function load_contents() {
    ui.app.classList.remove('hide');
    ui.treeview.resize();
@@ -132,7 +157,8 @@ function load_contents() {
       });
    });
 
-   var hash = window.location.hash;
+   var suburl = util_parse_hash();
+   var hash = suburl.hash;
    ui.container.editor.style.display = 'none';
    ui.container.explore.style.display = 'none';
    ui.container.search.style.display = 'none';

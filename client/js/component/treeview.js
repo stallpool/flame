@@ -193,7 +193,7 @@
             var cur = childom, offset_top = 0;
             offset_top += childom.offsetTop;
             if (
-               root.parentNode.scrollTop > offset_top + childom.offsetHeight ||
+               root.parentNode.scrollTop > offset_top /*+ childom.offsetHeight*/ ||
                root.parentNode.scrollTop + root.parentNode.offsetHeight < offset_top
             ) {
                root.parentNode.scrollTo(0, offset_top);
