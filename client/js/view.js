@@ -136,6 +136,7 @@ function load_contents() {
    ui.container.editor.style.display = 'none';
    ui.container.explore.style.display = 'none';
    ui.container.search.style.display = 'none';
+   ui.breadcrumb.reset();
    if (hash.startsWith('##')) {
       // search
       ui.container.search.style.display = 'block';
@@ -158,6 +159,7 @@ function load_contents_for_browse(hash) {
    ui.editor.on_content_ready(function () {
       ui.container.editor.style.display = 'block';
       ui_loaded();
+      ui.breadcrumb.layout('/' + project + path);
       ui.editor.api.layout();
    });
 }

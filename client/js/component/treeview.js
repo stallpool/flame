@@ -158,11 +158,15 @@
 
          function expand_one(root, dom, list, i) {
             if (hash !== window.location.hash) return;
+            if (i === list.length-1) {
+               // TODO: highlight the target dom
+               var highlighted = lookfor_childom(dom, list[i]) || lookfor_childom(dom, list[i] + '/');
+               highlight_childom(root, highlighted);
+            }
             var name = list[i] + '/';
             if (!name) return;
-            for (var j = 0, n = dom.children.length; j < n; j++) {
-               var childom = dom.children[j];
-               if (childom.getAttribute('data-name') !== name) continue;
+            var childom = lookfor_childom(dom, name);
+            if (childom) {
                tree_node_loading(
                   root, childom, function () { return hash === window.location.hash }
                ).then(function (dom) {
@@ -171,9 +175,42 @@
                }, function (err) {
                   console.log('cannot load tree view ...', err);
                });
-               break;
             }
-         }
+         } // expand_one
+
+         function lookfor_childom(dom, name) {
+            for (var j = 0, n = dom.children.length; j < n; j++) {
+               var childom = dom.children[j];
+               if (childom.getAttribute('data-name') !== name) continue;
+               return childom;
+            }
+            return null;
+         } // lookfor_childom
+
+         function highlight_childom(root, childom) {
+            if (!childom) return;
+            // scroll to make the selected item in visible view
+            var cur = childom, offset_top = 0;
+            offset_top += childom.offsetTop;
+            if (
+               root.parentNode.scrollTop > offset_top + childom.offsetHeight ||
+               root.parentNode.scrollTop + root.parentNode.offsetHeight < offset_top
+            ) {
+               root.parentNode.scrollTo(0, offset_top);
+            }
+            // flash to highlight the selected item
+            flash(childom, 3);
+
+            function flash(childom, remain) {
+               childom.style.color = 'white';
+               childom.style.backgroundColor = 'black';
+               setTimeout(function (childom) {
+                  childom.style.color = '';
+                  childom.style.backgroundColor = '';
+                  if (remain > 1) setTimeout(flash, 300, childom, remain-1);
+               }, 100, childom);
+            }
+         } // highlight_childom
       }
    };
    window.FlameTreeView = FlameTreeView;
