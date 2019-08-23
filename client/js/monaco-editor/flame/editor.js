@@ -74,7 +74,7 @@
          var _this = this;
          if (_this._content_loading) return e(_this._content_loading);
          if (!options) options = {};
-         // readOnly: true
+         options.readOnly = true;
          require([
             'vs/editor/editor.main',
             'flame/monaco.contribution'
