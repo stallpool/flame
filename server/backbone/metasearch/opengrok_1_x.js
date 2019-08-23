@@ -1,3 +1,4 @@
+const i_path = require('path');
 const i_url = require('url');
 const i_req = require('request');
 const i_doc = require('cheerio');
@@ -5,20 +6,10 @@ const i_common = require('./common');
 const i_text = require('../analysis/text');
 const i_utils = require('../../utils');
 
-function remove_b_and_replace_br(text) {
-   text = text.replace(new RegExp('<b\s*/?>', 'g'), '');
-   text = text.replace(new RegExp('<br\s*/?>', 'g'), '\n');
-   return text;
-}
-
 const version_constants = {
    '1.x': {
       xref: 'xref',
       raw: 'download',
-   },
-   '0.x': {
-      xref: 'xref',
-      raw: 'raw',
    }
 }
 
@@ -94,9 +85,13 @@ const mode = {
    common: {
       search: (client, options) => new Promise((r, e) => {
          if (!options || !options.project) return e(options);
-         if (!(
-            options.fullsearch || options.definition || options.symbol || options.filepath || options.history
-         )) return e(options);
+         if (
+            options.definition || options.symbol || options.filepath ||
+            options.history || options.lang || options.project.length
+         ) {
+         } else if (!options.fullsearch) {
+            return e(options);
+         }
          // options:
          //     cookie
          //    project -> project
@@ -110,25 +105,35 @@ const mode = {
          //    orderby -> sort
          //          ? -> si
          let form = {};
-         if (Array.isArray(options.project)) options.project = options.project.join(',');
-         form.project = options.project;
-         if (options.fullsearch) form.q = normalize_query(options.fullsearch);
-         if (options.definition) form.defs = normalize_query(options.definition);
-         if (options.symbol) form.refs = normalize_query(options.symbol);
-         if (options.filepath) form.path = normalize_query(options.filepath);
+         if (options.fullsearch) form.full = options.fullsearch || '.';
+         if (options.definition) form.def = options.definition;
+         if (options.symbol) form.symbol = options.symbol;
+         if (options.filepath) form.path = options.filepath;
          if (options.history) form.hist = normalize_query(options.history);
+         if (options.language) form.type = options.language;
          if (options.offset) form.start = options.offset;
-         if (options.size) form.n = options.size;
+         if (options.size) form.maxresults = options.size;
+         form.maxresults = form.maxresults || 50;
+         if (form.maxresults > 500) form.maxresults = 500;
          form.sort = options.orderby || 'relevancy';
          form = Object.keys(form).map(
             (key) => `${encodeURIComponent(key)}=${encodeURIComponent(form[key])}`
-         ).join('&');
+         )
+         if (!Array.isArray(options.project)) {
+            options.project = [options.project];
+         }
+         options.project.forEach((project_name) => {
+            form.push(`projects=${encodeURIComponent(project_name)}`);
+         });
+         form = form.join('&');
 
          let request_options = {
-            url: `${client.base.url}/search?${form}`,
+            url: `${client.base.url}/api/v1/search?${form}`,
+            headers: { 'Content-Type': 'application/json' },
          };
          if (options.cookie) request_options.jar = options.cookie;
          if (options.headers) request_options.headers = options.headers;
+         console.log('search:', request_options.url);
          i_req(request_options, (err, res, body) => {
             if (err) {
                return e(err);
@@ -147,8 +152,10 @@ const mode = {
          if (options.headers) request_options.headers = options.headers;
          i_req(request_options, (err, res, body) => {
             if (err) return e(err);
+            if (~~(res.statusCode/100) !== 2) return e(res);
+            if (body && body.indexOf('\0') >= 0) return r('<BinaryFile ...>');
             r(body);
-         })
+         });
       }),
       get_xref_item: (xref_contents) => {
          let doc = i_doc.load(xref_contents);
@@ -161,8 +168,6 @@ const mode = {
             let cells = doc(elem).find('td'), x;
             if (cells.length === 1) {
                x = doc(cells[0]);
-               // opengrok 0.x [skip] Up to higher level directory
-               //              colspan = 4
                return;
             }
             if (cells.length > 1) {
@@ -180,7 +185,7 @@ const mode = {
                });
                // opengrok 1.x [skip] item of `..`
                if (data_json.name === '..') return null;
-               // Size | 1.x: '-', 0.x: ''
+               // Size | 1.x: '-'
                return data_json;
             }
             cells = doc(elem).find('th');
@@ -199,92 +204,79 @@ const mode = {
          ).get();
       }, // get_projects
       get_items: (search_contents, options) => {
-         let doc = i_doc.load(search_contents);
          let r = {
             pages: 0,
-            items: []
-         };
-         let table = doc('div#results > table');
-         if (!table) return r;
-         let pages = doc('div#results > p > .sel')[0];
-         if (pages) {
-            let page_n = parseInt(doc(pages.parent).find('a').map(
-               (_, x) => doc(x).text()
-            ).get().pop()) || 1;
-            r.pages += page_n;
-         } else {
-            r.pages += 1
-         }
-
-         if (!options) options = {};
-         // not_parse_items: true/false, default=false
-         if (options.not_parse_items) return r;
-         let current_dir = null, current_file = null;
-         table.find('tr').each((_, tr) => {
-            tr = doc(tr);
-            let a, text;
-            if (tr.hasClass('dir')) {
-               a = tr.find('a');
-               text = a.text();
-               current_dir = {};
-               current_dir.path = text;
-               current_dir.files = [];
-               r.items.push(current_dir);
-            } else {
-               if (!current_dir) return;
-               current_file = {};
-
-               current_file.name = tr.find('td.f > a').text();
-
-               current_file.matches = [];
-               tr.find('td > .con > a.s').each((_, line) => {
-                  text = doc(line).text();
-                  if (!text) return;
-                  let space1st = text.indexOf(' ');
-                  if (space1st < 0) return;
-                  current_file.matches.push({
-                     lineno: parseInt(text.substring(0, space1st)),
-                     text: text.substring(space1st+1)
-                  });
-               });
-               if (!current_file.matches.length) {
-                  // no element of a.s
-                  // for example,
-                  // history item does not have line number
-                  // and '<br/>' should be replaced by '\n'
-                  text = tr.find('td > .con').html();
-                  current_file.matches.push({
-                     lineno: 1,
-                     text: remove_b_and_replace_br(text)
-                  });
-               }
-
-               if (!r.config) {
-                  // parse and store once
-                  // /history, /xref, /raw|/download
-                  a = tr.find('td.q > a');
-                  let links = [
-                     doc(a[0]).attr('href').split('/'),
-                     doc(a[1]).attr('href').split('/'),
-                     doc(a[2]).attr('href').split('/')
-                  ];
-                  for (let part_n = links[0].length, i = 0; i < part_n; i++) {
-                     if (links[0][i] !== links[1][i]) {
-                        r.config = {
-                           history: links[0][i],
-                           xref: links[1][i],
-                           // in odler version, it is 'raw' instead of 'download'
-                           raw: links[2][i],
-                        };
-                        break;
-                     }
-                  }
-               }
-               current_dir.files.push(current_file);
-               current_file = null;
+            items: {},
+            config: {
+               history: 'history',
+               xref: 'xref',
+               raw: 'download',
             }
-         });
+         };
+         let query_set = null;
+         if (options && options.query) {
+            query_set = {};
+            i_text.tokenizer.basic(options.query).forEach((token) => {
+               query_set[token] = 1;
+            });
+         }
+         let doc = null;
+         let score_filter = {
+            count: 0,
+            score: 0,
+            number: 10,
+         };
+         try {
+            doc = JSON.parse(search_contents);
+            doc.results && Object.keys(doc.results).forEach((filename) => {
+               let item = doc.results[filename];
+               let path = i_path.dirname(filename) + '/';
+               let name = i_path.basename(filename);
+               let path_obj = r.items[path];
+               if (!path_obj) {
+                  path_obj = {
+                     path, files: []
+                  };
+                  r.items[path] = path_obj;
+               }
+               let file_obj = {
+                  name, matches: item.map((obj) => ({
+                     lineno: obj.lineNumber,
+                     text: obj.line,
+                     score: score(obj.line, query_set),
+                  })),
+               };
+               if (item.length) {
+                  score_filter.count += file_obj.matches.length;
+                  score_filter.score += file_obj.matches.map((x) => x.score).reduce((x, y) => x+y);
+               }
+               path_obj.files.push(file_obj);
+            });
+            let avg_score = 0; //score_filter.score / (score_filter.count || 1);
+            Object.values(r.items).forEach((path_obj) => {
+               path_obj.files.forEach((file_obj) => {
+                  file_obj.matches = file_obj.matches.filter(
+                     (x) => x.score >= avg_score
+                  ).sort((x, y) => y.score - x.score).slice(0, score_filter.number);
+               });
+            });
+         } catch(err) {
+            console.error('opengrok_1_x/doc: parse error', search_contents, options);
+         }
+         r.items = Object.values(r.items);
          return r;
+
+         function score(text, query_set) {
+            if (!query_set) return 0;
+            let item_set = i_text.tokenizer.basic(text);
+            let score_set = {};
+            let score = 0;
+            item_set.forEach((token) => {
+               if (query_set[token]) score_set[token] = 1;
+            });
+            score = Object.keys(score_set).length;
+            return score;
+         }
       }, // get_items
    },
    noauth: {
@@ -505,14 +497,32 @@ class OpenGrokClient {
          if (!project_n) return r();
          let group_n = Math.ceil(project_n / system.project_n_group);
          for (let i = 0; i < group_n; i++) {
-            output_task_list.push({
+            let task = {
                client: this,
                query: query_map.query,
                projects: projects.slice(
                   i * system.project_n_group,
                   (i + 1) * system.project_n_group
-               )
-            });
+               ),
+               options: {},
+            };
+            if (query_map.definition) task.options.definition = query_map.definition;
+            if (query_map.symbol) task.options.symbol = query_map.symbol;
+            if (query_map.filepath) task.options.filepath = query_map.filepath;
+            if (query_map.history) task.options.history = query_map.history;
+            if (query_map.lang) task.options.language = query_map.lang;
+            if (query_map.offset) task.options.offset = query_map.offset;
+            if (query_map.size) task.options.size = query_map.size;
+            task.options.sort = query_map.orderby || 'relevancy';
+            let search_act = true;
+            if (
+               query_map.definition || query_map.symbol || query_map.filepath ||
+               query_map.history || query_map.lang || projects.length
+            ) {
+            } else if (!query_map.query) {
+               search_act = false;
+            }
+            if (search_act) output_task_list.push(task);
          }
          r();
       });
