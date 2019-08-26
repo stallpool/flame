@@ -3,8 +3,6 @@ const i_utils = require('../../utils');
 const i_acl = require('../acl').internal_api;
 const i_common = require('./common');
 const i_metasearch = {
-   opengrok_1_x: require('./opengrok_1_x'),
-   elasticsearch_6_x: require('./elasticsearch_6_x'),
    localfs: require('./localfs'),
 };
 

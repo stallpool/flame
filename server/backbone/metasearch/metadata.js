@@ -5,9 +5,6 @@ const system = {
 
 class MetaData {
    constructor() {
-      this.cache = new i_indexer_keyval.Storage({
-         base: system.base_dir
-      });
    }
 
    async load(path) {
