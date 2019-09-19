@@ -141,6 +141,7 @@
       dispose: function () {
          if (!this.api) return;
          if (this._backup.on_definition_click) this._backup.on_definition_click = null;
+         if (this._backup.decorations) this._backup.decorations = null;
          this.api.dispose();
       },
       on_content_ready: function (fn, self) {
@@ -238,6 +239,36 @@
       },
       hide: function () {
          this.self.style.display = 'none';
+      },
+      /*
+         model.deltaDecorations(
+            [], // deleting decoration ID list (model.getAllDecorations, model.getLineDecorations)
+            [], // adding decoration, { range, options }
+         )
+         e.g. ['c;1'], [{
+            range: new monaco.Range(lineNumber, column, lineNumber, column+length),
+            options: { inlineClassName: 'mark_test' }
+         }]
+      */
+      decoration_backup: function () {
+         if (!this.api) return;
+         var m = this.api.getModel();
+         let list = m.getAllDecorations();
+         this._backup.decorations = list.map(function (x) { return x.id; });
+      },
+      decoration_restore: function () {
+         if (!this.api) return;
+         if (!this._backup.decorations) return;
+         this._backup.decorations = [];
+         var m = this.api.getModel();
+         let list = m.getAllDecorations();
+         let map = {};
+         this._backup.decorations.forEach(function (x) { map[x] = 1; });
+         m.deltaDecorations(list.map(function (x) {
+            return x.id;
+         }).filter(function (x) {
+            return !map[x];
+         }), []);
       }
    };
 
