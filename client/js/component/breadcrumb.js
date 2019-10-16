@@ -28,6 +28,17 @@
             delete crumb.dom;
          });
          var crumbs = [];
+         var li, a;
+         li = document.createElement('li');
+         a = document.createElement('a');
+         a.classList.add('nav-link');
+         a.appendChild(document.createTextNode('#'));
+         li.appendChild(a);
+         parent.appendChild(li);
+         crumbs.push({
+            dom: li,
+            text: ''
+         });
          var parts = this.path.split('/');
          parts = parts.map(function (part) {
             if (!part) return null;

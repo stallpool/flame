@@ -36,7 +36,7 @@ var ui = {
    treeview: new FlameTreeView(dom('#project_tree_view')),
    breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
       on_click: function (elem, crumbs, index) {
-         var new_hash = '#/' + crumbs.slice(0, index+1).map(
+         var new_hash = '#' + crumbs.slice(0, index+1).map(
             function (x) { return x.text; }
          ).filter(
             function (x) { return !!x }
@@ -100,6 +100,9 @@ function register_events() {
       } else {
          ui.container.menu.style.display = 'none';
       }
+      if (target.getAttribute('data-href')) {
+         console.log(target.getAttribute('data-href'));
+      }
    });
 }
 
@@ -137,7 +140,7 @@ function util_parse_hash() {
    var parts = hash.split('#');
    var hash_obj = {};
    hash_obj.hash = '#' + parts[1];
-   hash_obj.todo = parts.slice(2).join('#');
+   hash_obj.search = parts.slice(2).join('#');
    return hash_obj;
 }
 
@@ -163,10 +166,9 @@ function load_contents() {
    ui.container.explore.style.display = 'none';
    ui.container.search.style.display = 'none';
    ui.breadcrumb.reset();
-   if (hash.startsWith('##')) {
+   if (suburl.search) {
       // search
-      ui.container.search.style.display = 'block';
-      ui_loaded();
+      load_contents_for_search(decodeURIComponent(suburl.search));
    } else if (hash === '#/') {
       // explore projects
       load_contents_for_explore();
@@ -175,6 +177,13 @@ function load_contents() {
       load_contents_for_browse(hash);
       ui.treeview.expand();
    }
+}
+
+function load_contents_for_search(text) {
+   console.log(text);
+   client.search('test', env);
+   ui.container.search.style.display = 'block';
+   ui_loaded();
 }
 
 function load_contents_for_browse(hash) {
