@@ -31,6 +31,7 @@
     "ws": "^6.1.2"
   },
   "devDependencies": {
-    "monaco-editor": "^0.16.2"
+    "sqlite3": "^4.1.0",
+    "monaco-editor": "^0.18.1"
   }
 }

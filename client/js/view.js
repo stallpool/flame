@@ -23,6 +23,7 @@ var ui = {
       menu: dom('#panel_menu')
    },
    list: {
+      search: new FlameSearchList(dom('#result_search')),
       explore: {
          project_list: dom('#explore_project_list')
       }
@@ -36,11 +37,14 @@ var ui = {
    treeview: new FlameTreeView(dom('#project_tree_view')),
    breadcrumb: new FlameBreadCrumb(dom('#nav_breadcrum'), {
       on_click: function (elem, crumbs, index) {
-         var new_hash = '#' + crumbs.slice(0, index+1).map(
+         var new_hash = '#/' + crumbs.slice(0, index+1).map(
             function (x) { return x.text; }
          ).filter(
             function (x) { return !!x }
-         ).join('/') + '/';
+         ).join('/');
+         if (new_hash.charAt(new_hash.length-1) !== '/') {
+            new_hash += '/';
+         }
          window.location.hash = new_hash;
       }
    }),
@@ -180,9 +184,21 @@ function load_contents() {
 }
 
 function load_contents_for_search(text) {
-   console.log(text);
-   client.search('test', env);
-   ui.container.search.style.display = 'block';
+   ui.list.search.reset();
+   ui.list.search.build_text('Searching ...');
+   client.search(text, env).then(function (data) {
+      let hits = data.result.hits || [];
+      if (hits.length) {
+         ui.list.search.build_text('', text);
+      } else {
+         ui.list.search.build_text('Nothing found.');
+      }
+      ui.list.search.build_list(hits);
+      ui.container.search.style.display = 'block';
+   }, function () {
+      ui.list.search.build_text('Nothing found.');
+      ui.container.search.style.display = 'block';
+   });
    ui_loaded();
 }
 

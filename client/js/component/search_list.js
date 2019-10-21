@@ -403,6 +403,8 @@
       switch(item.type) {
       case 'metasearch_source':
          return build_item_metasearch_source(item);
+      case 'metasearch_zoekt':
+         return build_item_metasearch_zoekt(item);
       }
       return null;
    }
@@ -440,6 +442,53 @@
          }
          a.href = href;
          a.appendChild(document.createTextNode(match.text));
+         td.appendChild(a);
+         if (match.name) {
+            var span = document.createElement('span');
+            span.classList.add('match-line-filename');
+            span.appendChild(document.createTextNode(' (' + match.name + ')'));
+            td.appendChild(span);
+         }
+         tr.appendChild(td);
+         tbody.appendChild(tr);
+      });
+      return table;
+   }
+
+   function build_item_metasearch_zoekt(item) {
+      var card = build_card('copy-line', item);
+      var card_matches = build_item_metasearch_zoekt_matches(item);
+      if (card_matches) {
+         card.text.appendChild(card_matches);
+      }
+      return card.self;
+   }
+
+   function build_item_metasearch_zoekt_matches(item) {
+      var matches = item.matches;
+      if (!matches.length) return null;
+      var table = document.createElement('table');
+      var tbody = document.createElement('tbody');
+      table.appendChild(tbody);
+      matches.forEach(function (match) {
+         if (!match || !match.text || !match.linenumber) return;
+         var tr, td, a;
+         tr = document.createElement('tr');
+         td = document.createElement('td');
+         td.classList.add('text-right');
+         td.classList.add('lineno');
+         td.appendChild(document.createTextNode(match.linenumber + ' '));
+         tr.appendChild(td);
+         td = document.createElement('td');
+         a = document.createElement('a');
+         var href = item.base_url || '';
+         href += match.name || item.name;
+         href += '?lineno=' + match.linenumber;
+         if (href && !href.startsWith('#')) {
+            a.target = '_blank';
+         }
+         a.href = href;
+         a.innerHTML = match.text;
          td.appendChild(a);
          if (match.name) {
             var span = document.createElement('span');
@@ -557,6 +606,17 @@
             cmd: 'metasearch.search.cancel'
          }));
          this.reset();
+      },
+      build_list: function (item_list) {
+         var _this = this;
+         this.items = item_list;
+         item_list.forEach(function (item) {
+            item.dom = build_item(item);
+            if (item.dom) _this.dom.body.appendChild(item.dom);
+         });
+      },
+      build_text: function (text, query) {
+         this.dom.info.innerHTML = generate_alert_html(text, query);
       },
       reset: function () {
          var _this = this;

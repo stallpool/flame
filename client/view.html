@@ -45,7 +45,7 @@
    <header class="header header-5">
       <div class="branding">
          <img class="header-icon" src="icon.png" />&nbsp;
-         <span class="title"><a class="home" href="#/">Flame</a></span>
+         <span class="title"><a class="home" href="/">Flame</a></span>
       </div>
    </header>
    <div id="p_loading">
@@ -63,7 +63,9 @@
       </div>
       <div class="content-container">
          <div class="content-area">
-            <div id="panel_search">Search</div>
+            <div id="panel_search">
+               <div id="result_search"></div>
+            </div>
             <div id="panel_explore">
                <div class="btn-group" style="width:100%;">
                   <input id="explore_match" class="clr-input" style="width:100%;" placeholder="filter project ..."/>
@@ -92,6 +94,7 @@
    <script type="text/javascript" src="./js/client.js"></script>
    <script type="text/javascript" src="./js/component/breadcrumb.js"></script>
    <script type="text/javascript" src="./js/component/treeview.js"></script>
+   <script type="text/javascript" src="./js/component/search_list.js"></script>
    <script src="./js/monaco-editor/dev/vs/loader.js"></script>
    <script src="./js/monaco-editor/flame/editor.js"></script>
    <script type="text/javascript" src="./js/view.js"></script>

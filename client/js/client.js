@@ -19,7 +19,7 @@ var client = {
 
       function internal_search(a, r, robj) {
          ajax({
-            url: '/api/v1/search',
+            url: '/api/metasearch/browse/search',
             method: 'POST',
             json: {
                username: env.user.username,
@@ -90,8 +90,13 @@ var client = {
                r(null);
             });
          });
-      }
-   },
+      }, // get_dir
+      token: {
+         get_hover: function (env, project, path, L, C) {},
+         get_definitions: function (env, project, path, L, C) {},
+         get_references: function (env, project, path, L, C) {}
+      } // token
+   }, // browse
    user: {}, // user
    websocket: {
       connect: function (env, options, retried) {

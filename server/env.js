@@ -4,7 +4,9 @@ const env = {
    base: base,
    debug: !!process.env.FLAME_DEBUG,
    auth_internal: false,
-   search_path: process.env.FLAME_SEARCH_PATH,
+   search_engine: {
+      url: process.env.FLAME_SEARCHENGINE_URL,
+   },
    ldap_server: process.env.FLAME_LDAP_SERVER,
    keyval: {
       // store key value into file;

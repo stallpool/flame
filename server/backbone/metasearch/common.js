@@ -1,4 +1,6 @@
+const i_env = require('../../env');
 const i_metadata = require('./metadata');
+const i_curl = require('../analysis/curl');
 
 function extract_query_keyval (text) {
    if (!text) return null;
@@ -48,8 +50,24 @@ const api = {
             (project) => projects.indexOf(project) >= 0
          );
          return filter_in;
+      }, // parse
+   }, // query
+   search: {
+      zoekt: async (options) => {
+         let url = i_env.search_engine.url;
+         if (!url) return [];
+         if (!options) return [];
+         let query = encodeURIComponent(options.query);
+         let size = parseInt(options.size) || 50;
+         let r = await i_curl.request({
+            data_type: 'plain',
+            follow_redirect: true,
+            url: `${url}?q=${query}&num=${size}`,
+            method: 'POST'
+         });
+         return r;
       }
-   }
+   }, //search
 };
 
 module.exports = api;

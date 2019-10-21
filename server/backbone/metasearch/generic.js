@@ -265,6 +265,34 @@ const api = {
             i_utils.Web.exxx(res, 500);
          }
       },
+      search: (req, res, options) => {
+         let query = options.json.query;
+         if (!query) return i_utils.Web.e400(res);
+         i_common.search.zoekt({ query }).then((data) => {
+            try {
+               let json = JSON.parse(data);
+               json.hits = json.hits.filter((item) => !!item);
+               json.hits.forEach((item) => {
+                  delete item.url;
+                  if (item.duplicated) {
+                     item.name = item.id;
+                     return;
+                  }
+                  delete item.id;
+                  item.uol = '#/' + item.repository + '/' + item.filename;
+                  item.name = item.uol;
+                  delete item.repository;
+                  delete item.filename;
+                  item.type = 'metasearch_zoekt';
+               });
+               i_utils.Web.rjson(res, json);
+            } catch(err) {
+               i_utils.Web.rjson(res, []);
+            }
+         }, (err) => {
+            i_utils.Web.rjson(res, []);
+         });
+      },
    },
 };
 i_utils.Web.require_admin_login_batch(api.admin);
