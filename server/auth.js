@@ -6,6 +6,9 @@ const api = {
    authenticate: (username, password) => new Promise((resolve, reject) => {
       // no auth
       // ldap integration: api.authenticate = api.authenticate_for_ldap
+      if (i_env.ldap_server) {
+         return this.authenticate_for_ldap(username, password).then(resolve, reject);
+      }
       resolve(keyval_setauth(username));
    }),
    check_login: (username, uuid) => {
