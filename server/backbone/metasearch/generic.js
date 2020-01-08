@@ -4,6 +4,7 @@ const i_acl = require('../acl').internal_api;
 const i_common = require('./common');
 const i_metasearch = {
    localfs: require('./localfs'),
+   modified_zoekt: require('./modified_zoekt'),
 };
 
 /***** follow the interface to define new type of metasearch integration
@@ -99,12 +100,10 @@ Object.assign(system, i_keyval.get(keyval_key));
 
 function create_metasearch_client(metatype, base_url, security_mode, version) {
    switch (metatype) {
-      case 'opengrok':
-         return new i_metasearch.opengrok_1_x.Client(base_url, security_mode, version);
-      case 'elasticsearch':
-         return new i_metasearch.elasticsearch_6_x.Client(base_url, security_mode, version);
       case 'localfs':
          return new i_metasearch.localfs.Client(base_url, security_mode, version);
+      case 'modified_zoekt':
+         return new i_metasearch.modified_zoekt.Client(base_url, security_mode, version);
    }
 }
 function get_host_by_project_name(project) {
