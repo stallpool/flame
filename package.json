@@ -1,0 +1,25 @@
+{
+  "name": "flame",
+  "version": "1.0.0",
+  "description": "search engine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo 'No test'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stallpool/flame.git"
+  },
+  "author": "Seven Lju",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/stallpool/flame/issues"
+  },
+  "homepage": "https://github.com/stallpool/flame#readme",
+  "devDependencies": {
+    "uuid": "^8.3.2",
+    "webpack": "^5.39.1",
+    "webpack-cli": "^4.7.2"
+  },
+  "dependencies": {}
+}
