@@ -94,13 +94,32 @@ const api = {
             });
          });
       }, // write
-      unlink: async (filename) => {
+      lstat: async (filename) => {
          return new Promise((r, e) => {
-            i_fs.unlink(filename, (err) => {
+            i_fs.lstat(filename, (err, stat) => {
                if (err) return e(err);
-               r();
+               r(stat);
             });
          });
+      }, // lstat
+      unlink: async (filename) => {
+         const stat = await api.fileOp.lstat(filename);
+         if (stat.isDirectory()) {
+            return new Promise((r, e) => {
+               // XXX: rmdir recursive option is deprecated
+               i_fs.rmdir(filename, { recursive: true }, (err) => {
+                  if (err) return e(err);
+                  r();
+               })
+            });
+         } else {
+            return new Promise((r, e) => {
+               i_fs.unlink(filename, (err) => {
+                  if (err) return e(err);
+                  r();
+               });
+            });
+         }
       }, // unlink
    }, // fileOp
 };
